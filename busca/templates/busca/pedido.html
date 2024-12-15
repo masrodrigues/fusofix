@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumo do Pedido</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+    <!-- Header -->
+    <header class="bg-gray-100 py-4 flex items-center justify-between relative">
+        <div class="pl-8">
+            <img src="{% static 'images/logo-belenus.png' %}" alt="Logo Belenus" class="w-auto h-14">
+        </div>
+        <div class="flex-grow text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Resumo do Pedido</h1>
+        </div>
+        <div class="pr-8">
+            <a href="{% url 'home' %}" class="text-blue-500 hover:underline">Voltar para Home</a>
+        </div>
+    </header>
+
+    <!-- Conteúdo do Pedido -->
+    <div class="container mx-auto mt-8 bg-white rounded shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Seu Pedido</h2>
+        <ul id="order-items" class="space-y-4">
+            <!-- Itens do pedido serão renderizados aqui -->
+        </ul>
+        <p class="text-lg font-bold mt-4">Total: <span id="order-total">R$ 0.00</span></p>
+    </div>
+
+    <script>
+        const orderItemsContainer = document.getElementById("order-items");
+        const orderTotalContainer = document.getElementById("order-total");
+        const order = JSON.parse(localStorage.getItem("order")) || [];
+
+        function renderOrder() {
+            orderItemsContainer.innerHTML = "";
+            let total = 0;
+
+            order.forEach(item => {
+                total += item.total;
+
+                const li = document.createElement("li");
+                li.className = "flex justify-between border-b pb-2";
+                li.innerHTML = `
+                    <div>
+                        <strong>${item.descricao}</strong> (Código: ${item.codigo})
+                        <p>Quantidade: ${item.quantidade}</p>
+                    </div>
+                    <div>
+                        <p>R$ ${item.total.toFixed(2)}</p>
+                    </div>
+                `;
+                orderItemsContainer.appendChild(li);
+            });
+
+            orderTotalContainer.textContent = `R$ ${total.toFixed(2)}`;
+        }
+
+        renderOrder();
+    </script>
+</body>
+</html>

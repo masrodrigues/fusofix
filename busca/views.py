@@ -21,3 +21,7 @@ def busca_produtos_api(request):
     # Retorne todos os campos necessários para o modal
     data = list(resultados.values('descricao', 'codigo_do_produto', 'quantidade', 'valor_unitario', 'valor'))
     return JsonResponse(data, safe=False)
+from django.shortcuts import render
+
+def pedido(request):
+    return render(request, 'busca/pedido.html')  # Certifique-se de que o template está no diretório correto
