@@ -7,39 +7,35 @@
     <!-- Importando Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilo do carrossel */
         .carousel {
             scroll-snap-type: x mandatory;
             overflow-x: hidden;
             display: flex;
             scroll-behavior: smooth;
         }
-
         .carousel-item {
             scroll-snap-align: center;
             flex: none;
-            width: 100%; /* Garante largura total do viewport */
+            width: 100%;
         }
-
-        /* Estilo para o dropdown */
         .dropdown-results {
-            z-index: 10; /* Fica acima do carrossel */
+            z-index: 10;
             position: absolute;
             left: 0;
-            top: 100%; /* Sai imediatamente abaixo do input */
-            width: 100%; /* Largura igual ao do input */
+            top: 100%;
+            width: 100%;
             background-color: white;
         }
-
-        /* Adicionando margem no carrossel para acomodar o dropdown */
         .carousel-container {
             margin-top: 80px;
+        }
+        #product-modal {
+            z-index: 20;
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans">
     {% load static %}
-    <!-- Header -->
     <header class="bg-gray-100 py-4 flex items-center justify-between relative">
         <div class="pl-8">
             <img src="{% static 'images/logo-belenus.png' %}" alt="Logo Belenus" class="w-auto h-14">
@@ -51,13 +47,9 @@
             <img src="{% static 'images/logo-fusofix.png' %}" alt="Logo Fusofix" class="w-auto h-14">
         </div>
     </header>
-
-    <!-- Barra de ícones -->
     <div class="bg-yellow-400 w-full flex justify-center py-2">
         <img src="{% static 'images/Container.svg' %}" alt="Header Icons" class="w-auto h-12">
     </div>
-
-    <!-- Barra de Busca -->
     <div class="bg-yellow-400 w-full py-4">
         <div class="container mx-auto flex flex-col items-center relative">
             <form method="get" id="search-form" class="w-1/2 flex items-center relative">
@@ -79,15 +71,12 @@
                     </svg>
                 </button>
             </form>
-            <!-- Dropdown para os resultados -->
             <ul 
                 id="search-results" 
                 class="dropdown-results hidden border border-gray-300 rounded shadow-lg"
             ></ul>
         </div>
     </div>
-
-    <!-- Carrossel -->
     <div class="carousel-container">
         <div class="relative">
             <div class="carousel" id="carousel">
@@ -119,18 +108,43 @@
                 </button>
             </div>
         </div>
-        <!-- Modal para detalhes do produto -->
-<div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 w-1/2">
-        <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
-        <div id="modal-content">
-            <!-- Os detalhes do produto serão preenchidos dinamicamente -->
+    </div>
+
+    <!-- Modal de Produto -->
+    <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-1/2 relative">
+            <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
+            <div id="modal-content">
+                <!-- Detalhes do produto -->
+            </div>
+            <div class="mt-4 flex items-center justify-between">
+                <input 
+                    type="number" 
+                    id="quantity-input" 
+                    class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
+                    value="1" 
+                    min="1"
+                >
+                <button 
+                    id="add-to-order" 
+                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow"
+                >
+                    Adicionar ao Pedido
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
+    <!-- Resumo do Pedido -->
+    <div id="order-summary" class="bg-white rounded shadow p-4 mt-4 container mx-auto hidden">
+        <h2 class="text-xl font-bold mb-4">Resumo do Pedido</h2>
+        <ul id="order-items" class="space-y-2">
+            <!-- Produtos adicionados serão exibidos aqui -->
+        </ul>
+        <p class="text-lg font-bold mt-4">Total: <span id="order-total">R$ 0.00</span></p>
     </div>
 
+    
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const searchInput = document.getElementById("search-input");
@@ -138,16 +152,24 @@
             const productModal = document.getElementById("product-modal");
             const modalContent = document.getElementById("modal-content");
             const closeModal = document.getElementById("close-modal");
-    
-            // Requisição de busca dinâmica
+            const quantityInput = document.getElementById("quantity-input");
+            const addToOrderButton = document.getElementById("add-to-order");
+            const orderSummary = document.getElementById("order-summary");
+            const orderItems = document.getElementById("order-items");
+            const orderTotal = document.getElementById("order-total");
+
+            let currentProduct = null;
+            let order = [];
+
+            // Busca dinâmica
             searchInput.addEventListener("input", async () => {
                 const query = searchInput.value.trim();
                 searchResults.innerHTML = "";
-    
-                if (query.length > 2) { // Realizar busca após 3 caracteres
+
+                if (query.length > 2) {
                     const response = await fetch(`/api/search?q=${query}`);
                     const produtos = await response.json();
-    
+
                     if (produtos.length > 0) {
                         searchResults.classList.remove("hidden");
                         produtos.forEach(produto => {
@@ -159,14 +181,14 @@
                                 </div>
                             `;
                             li.addEventListener("click", () => {
-                                // Abrir o modal com os detalhes do produto
+                                currentProduct = produto;
                                 modalContent.innerHTML = `
                                     <h2 class="text-xl font-bold">${produto.descricao}</h2>
                                     <p><strong>Código:</strong> ${produto.codigo_do_produto}</p>
-                                    <p><strong>Quantidade:</strong> ${produto.quantidade}</p>
+                                    <p><strong>Quantidade Disponível:</strong> ${produto.quantidade}</p>
                                     <p><strong>Valor Unitário:</strong> R$ ${produto.valor_unitario}</p>
-                                    <p><strong>Valor Total:</strong> R$ ${produto.valor}</p>
                                 `;
+                                quantityInput.value = 1;
                                 productModal.classList.remove("hidden");
                                 searchResults.classList.add("hidden");
                             });
@@ -182,27 +204,59 @@
                     searchResults.classList.add("hidden");
                 }
             });
-    
-            // Fechar o modal
+
+            // Fechar modal
             closeModal.addEventListener("click", () => {
                 productModal.classList.add("hidden");
             });
-    
-            // Fechar modal ao clicar fora
-            window.addEventListener("click", (e) => {
-                if (e.target === productModal) {
+
+            // Adicionar ao pedido
+            addToOrderButton.addEventListener("click", () => {
+                const quantity = parseInt(quantityInput.value, 10);
+                if (quantity > 0 && currentProduct) {
+                    const productInOrder = order.find(item => item.codigo === currentProduct.codigo_do_produto);
+                    if (productInOrder) {
+                        productInOrder.quantidade += quantity;
+                        productInOrder.total += currentProduct.valor_unitario * quantity;
+                    } else {
+                        order.push({
+                            descricao: currentProduct.descricao,
+                            codigo: currentProduct.codigo_do_produto,
+                            quantidade: quantity,
+                            total: currentProduct.valor_unitario * quantity
+                        });
+                    }
+                    updateOrderSummary();
                     productModal.classList.add("hidden");
                 }
             });
-    
-            // Fechar dropdown ao clicar fora
-            document.addEventListener("click", (e) => {
-                if (!searchResults.contains(e.target) && e.target !== searchInput) {
-                    searchResults.classList.add("hidden");
-                }
-            });
+
+            // Atualizar resumo do pedido
+            function updateOrderSummary() {
+                orderItems.innerHTML = "";
+                let total = 0;
+
+                order.forEach(item => {
+                    total += item.total;
+                    const li = document.createElement("li");
+                    li.innerHTML = `
+                        <div class="flex justify-between">
+                            <div>
+                                <strong>${item.descricao}</strong> (Código: ${item.codigo})
+                                <p>Quantidade: ${item.quantidade}</p>
+                            </div>
+                            <div>
+                                <p>R$ ${item.total.toFixed(2)}</p>
+                            </div>
+                        </div>
+                    `;
+                    orderItems.appendChild(li);
+                });
+
+                orderTotal.textContent = `R$ ${total.toFixed(2)}`;
+                orderSummary.classList.remove("hidden");
+            }
         });
     </script>
-    
 </body>
 </html>
