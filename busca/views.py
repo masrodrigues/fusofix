@@ -18,5 +18,6 @@ def busca_produtos_api(request):
     ) | Produto.objects.filter(
         codigo_do_produto__icontains=query
     )
-    data = list(resultados.values('descricao', 'codigo_do_produto'))
+    # Retorne todos os campos necessários para o modal
+    data = list(resultados.values('descricao', 'codigo_do_produto', 'quantidade', 'valor_unitario', 'valor'))
     return JsonResponse(data, safe=False)

@@ -21,13 +21,19 @@
             width: 100%; /* Garante largura total do viewport */
         }
 
-        /* Estilo para garantir que o dropdown "saia" do input */
+        /* Estilo para o dropdown */
         .dropdown-results {
             z-index: 10; /* Fica acima do carrossel */
             position: absolute;
             left: 0;
             top: 100%; /* Sai imediatamente abaixo do input */
             width: 100%; /* Largura igual ao do input */
+            background-color: white;
+        }
+
+        /* Adicionando margem no carrossel para acomodar o dropdown */
+        .carousel-container {
+            margin-top: 80px;
         }
     </style>
 </head>
@@ -76,15 +82,14 @@
             <!-- Dropdown para os resultados -->
             <ul 
                 id="search-results" 
-                class="dropdown-results hidden bg-white border border-gray-300 rounded shadow-lg"
+                class="dropdown-results hidden border border-gray-300 rounded shadow-lg"
             ></ul>
         </div>
     </div>
 
     <!-- Carrossel -->
-    <div class="w-full mt-4">
+    <div class="carousel-container">
         <div class="relative">
-            <!-- Imagens do carrossel -->
             <div class="carousel" id="carousel">
                 <div class="carousel-item">
                     <img src="{% static 'images/belenus.jpg' %}" alt="Imagem 1" class="w-full h-auto">
@@ -99,34 +104,70 @@
                     <img src="{% static 'images/beltools.jpg' %}" alt="Imagem 4" class="w-full h-auto">
                 </div>
             </div>
+            <div class="absolute top-1/2 left-4 transform -translate-y-1/2">
+                <button id="prev" class="p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8 text-yellow-500 hover:text-yellow-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+            </div>
+            <div class="absolute top-1/2 right-4 transform -translate-y-1/2">
+                <button id="next" class="p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8 text-yellow-500 hover:text-yellow-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
         </div>
+        <!-- Modal para detalhes do produto -->
+<div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-1/2">
+        <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
+        <div id="modal-content">
+            <!-- Os detalhes do produto serão preenchidos dinamicamente -->
+        </div>
+    </div>
+</div>
+
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const searchInput = document.getElementById("search-input");
             const searchResults = document.getElementById("search-results");
-
+            const productModal = document.getElementById("product-modal");
+            const modalContent = document.getElementById("modal-content");
+            const closeModal = document.getElementById("close-modal");
+    
+            // Requisição de busca dinâmica
             searchInput.addEventListener("input", async () => {
                 const query = searchInput.value.trim();
                 searchResults.innerHTML = "";
-
-                if (query.length > 2) { // Realiza a busca a partir de 3 caracteres
+    
+                if (query.length > 2) { // Realizar busca após 3 caracteres
                     const response = await fetch(`/api/search?q=${query}`);
                     const produtos = await response.json();
-
+    
                     if (produtos.length > 0) {
                         searchResults.classList.remove("hidden");
                         produtos.forEach(produto => {
                             const li = document.createElement("li");
                             li.innerHTML = `
                                 <div class="px-4 py-2 hover:bg-gray-200 cursor-pointer">
-                                    <strong>${produto.descricao}</strong> 
+                                    <strong>${produto.descricao}</strong>
                                     <span>(Código: ${produto.codigo_do_produto})</span>
                                 </div>
                             `;
                             li.addEventListener("click", () => {
-                                searchInput.value = produto.descricao;
+                                // Abrir o modal com os detalhes do produto
+                                modalContent.innerHTML = `
+                                    <h2 class="text-xl font-bold">${produto.descricao}</h2>
+                                    <p><strong>Código:</strong> ${produto.codigo_do_produto}</p>
+                                    <p><strong>Quantidade:</strong> ${produto.quantidade}</p>
+                                    <p><strong>Valor Unitário:</strong> R$ ${produto.valor_unitario}</p>
+                                    <p><strong>Valor Total:</strong> R$ ${produto.valor}</p>
+                                `;
+                                productModal.classList.remove("hidden");
                                 searchResults.classList.add("hidden");
                             });
                             searchResults.appendChild(li);
@@ -141,7 +182,20 @@
                     searchResults.classList.add("hidden");
                 }
             });
-
+    
+            // Fechar o modal
+            closeModal.addEventListener("click", () => {
+                productModal.classList.add("hidden");
+            });
+    
+            // Fechar modal ao clicar fora
+            window.addEventListener("click", (e) => {
+                if (e.target === productModal) {
+                    productModal.classList.add("hidden");
+                }
+            });
+    
+            // Fechar dropdown ao clicar fora
             document.addEventListener("click", (e) => {
                 if (!searchResults.contains(e.target) && e.target !== searchInput) {
                     searchResults.classList.add("hidden");
@@ -149,5 +203,6 @@
             });
         });
     </script>
+    
 </body>
 </html>
