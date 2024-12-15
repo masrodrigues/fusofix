@@ -93,24 +93,23 @@
     </div>
 
     <!-- Carrossel -->
-    <div class="carousel-container">
-        <div class="relative">
-            <div class="carousel" id="carousel">
-                <div class="carousel-item">
-                    <img src="{% static 'images/belenus.jpg' %}" alt="Imagem 1" class="w-full h-auto">
-                </div>
-                <div class="carousel-item">
-                    <img src="{% static 'images/belfit.jpg' %}" alt="Imagem 2" class="w-full h-auto">
-                </div>
-                <div class="carousel-item">
-                    <img src="{% static 'images/belfit2.jpg' %}" alt="Imagem 3" class="w-full h-auto">
-                </div>
-                <div class="carousel-item">
-                    <img src="{% static 'images/beltools.jpg' %}" alt="Imagem 4" class="w-full h-auto">
-                </div>
+    <div class="carousel-container relative">
+        <div class="carousel" id="carousel">
+            <div class="carousel-item">
+                <img src="{% static 'images/belenus.jpg' %}" alt="Imagem 1" class="w-full h-auto">
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'images/belfit.jpg' %}" alt="Imagem 2" class="w-full h-auto">
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'images/belfit2.jpg' %}" alt="Imagem 3" class="w-full h-auto">
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'images/beltools.jpg' %}" alt="Imagem 4" class="w-full h-auto">
             </div>
         </div>
     </div>
+    
 
     <!-- Modal -->
     <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -229,6 +228,47 @@
                 searchResults.classList.add("hidden");
             }
         });
+
+        const carousel = document.getElementById("carousel");
+        let currentIndex = 0;
+        const carouselItems = carousel.querySelectorAll(".carousel-item");
+        const totalItems = carouselItems.length;
+
+        function showSlide(index) {
+            const offset = index * carousel.clientWidth;
+            carousel.scrollTo({ left: offset, behavior: "smooth" });
+        }
+
+        function nextSlide() {
+            currentIndex = (currentIndex + 1) % totalItems;
+            showSlide(currentIndex);
+        }
+
+        function prevSlide() {
+            currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+            showSlide(currentIndex);
+        }
+
+        let autoSlide = setInterval(nextSlide, 5000);
+
+        carousel.addEventListener("mouseenter", () => clearInterval(autoSlide));
+        carousel.addEventListener("mouseleave", () => autoSlide = setInterval(nextSlide, 5000));
+
+        // Adiciona botões para controle manual
+        const prevButton = document.createElement("button");
+        const nextButton = document.createElement("button");
+
+        prevButton.innerHTML = "&lt;";
+        nextButton.innerHTML = "&gt;";
+        prevButton.classList.add("absolute", "top-1/2", "-translate-y-1/2", "left-2", "bg-gray-800", "text-white", "p-2", "rounded-full", "hover:bg-gray-700");
+        nextButton.classList.add("absolute", "top-1/2", "-translate-y-1/2", "right-2", "bg-gray-800", "text-white", "p-2", "rounded-full", "hover:bg-gray-700");
+
+        prevButton.addEventListener("click", prevSlide);
+        nextButton.addEventListener("click", nextSlide);
+
+        carousel.parentElement.appendChild(prevButton);
+        carousel.parentElement.appendChild(nextButton);
+
     </script>
 </body>
 </html>
