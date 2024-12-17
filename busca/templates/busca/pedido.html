@@ -146,10 +146,10 @@
             }
             generatePDF(clientName);
             saveModal.classList.add("hidden");
-            clientNameInput.value = ""; // Limpa o campo
+            clientNameInput.value = "";
         });
 
-        // Gerar PDF com logo e estilização
+        // Gerar PDF com logo e tabela estilizada
         function generatePDF(clientName) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -158,30 +158,34 @@
             logo.src = "{% static 'images/logo-fusofix.png' %}";
 
             logo.onload = function () {
-                doc.addImage(logo, "PNG", 85, 10, 40, 20); // Adiciona o logo no topo do PDF
+                // Cabeçalho com logo e título
+                doc.addImage(logo, "PNG", 10, 10, 30, 20);
                 doc.setFontSize(18);
-                doc.text("Resumo do Pedido", 105, 40, null, null, "center");
-
+                doc.text("Resumo do Pedido", 150, 20, null, null, "right");
                 doc.setFontSize(12);
-                doc.text(`Cliente: ${clientName}`, 105, 50, null, null, "center");
+                doc.text(`Cliente: ${clientName}`, 10, 40);
 
-                let yPosition = 60;
-                let total = 0;
+                // Tabela
+                const headers = [["Nome", "Quantidade", "Valor"]];
+                const data = order.map(item => [
+                    item.descricao, 
+                    item.quantidade, 
+                    `R$ ${item.total.toFixed(2)}`
+                ]);
 
-                order.forEach((item, index) => {
-                    total += item.total;
-                    doc.text(`${index + 1}. ${item.descricao}`, 10, yPosition);
-                    doc.text(`Quantidade: ${item.quantidade}`, 90, yPosition);
-                    doc.text(`R$ ${item.total.toFixed(2)}`, 160, yPosition);
-                    yPosition += 10;
+                let total = order.reduce((sum, item) => sum + item.total, 0);
+                data.push(["", "Total", `R$ ${total.toFixed(2)}`]);
 
-                    if (yPosition > 270) {
-                        doc.addPage();
-                        yPosition = 10;
-                    }
+                doc.autoTable({
+                    startY: 50,
+                    head: headers,
+                    body: data,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 150, 0] }, // Verde no cabeçalho
+                    styles: { fontSize: 10 },
+                    columnStyles: { 0: { halign: 'left' }, 2: { halign: 'right' } }
                 });
 
-                doc.text(`Total: R$ ${total.toFixed(2)}`, 10, yPosition + 10);
                 doc.save(`Pedido_${clientName.replace(/\s/g, "_")}.pdf`);
             };
         }
@@ -189,5 +193,6 @@
         // Renderizar o pedido ao carregar a página
         document.addEventListener("DOMContentLoaded", renderOrder);
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
