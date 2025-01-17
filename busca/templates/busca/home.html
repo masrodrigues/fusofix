@@ -299,7 +299,7 @@
     }
 
     function updateOrderCount() {
-        const totalProducts = order.reduce((sum, p) => sum + p.quantidade, 0);
+        const totalProducts = order.length; // Conta apenas itens únicos no carrinho
         orderCount.textContent = totalProducts;
         if (totalProducts > 0) {
             orderCount.classList.remove("hidden");
@@ -307,6 +307,7 @@
             orderCount.classList.add("hidden");
         }
     }
+    
 
     function closeModalFunction() {
         productModal.classList.add("hidden");
