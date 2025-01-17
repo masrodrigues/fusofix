@@ -112,22 +112,40 @@
     
 
   <!-- Modal -->
-  <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 w-1/2 relative" id="modal-content-container">
+<div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-3/4 relative" id="modal-content-container">
         <!-- Botão de Fechar -->
         <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
         <div id="modal-content">
-            <h2 id="modal-title" class="text-xl font-bold"></h2>
-            <p id="modal-description"></p>
-            <p id="modal-unit-price" class="text-gray-700 mt-2"></p> <!-- Novo elemento para valor unitário -->
-            <div class="mt-4 flex items-center justify-between">
-                <input 
-                    type="number" 
-                    id="quantity-input" 
-                    class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
-                    value="1" 
-                    min="1"
-                >
+            <table class="table-auto w-full text-left border-collapse">
+                <thead>
+                    <tr>
+                        <th class="border-b p-2 font-bold text-gray-700">Item</th>
+                        <th class="border-b p-2 font-bold text-gray-700">Unidade</th>
+                        <th class="border-b p-2 font-bold text-gray-700">Valor Unitário</th>
+                        <th class="border-b p-2 font-bold text-gray-700">Quantidade</th>
+                        <th class="border-b p-2 font-bold text-gray-700">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="modal-item" class="p-2"></td>
+                        <td class="p-2">PC</td>
+                        <td id="modal-unit-price" class="p-2"></td>
+                        <td class="p-2">
+                            <input 
+                                type="number" 
+                                id="quantity-input" 
+                                class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
+                                value="1" 
+                                min="1"
+                            >
+                        </td>
+                        <td id="modal-total-price" class="p-2"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="mt-4 flex justify-end">
                 <button id="add-to-order" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">
                     Adicionar ao Pedido
                 </button>
@@ -135,6 +153,7 @@
         </div>
     </div>
 </div>
+
 
 
 
@@ -174,36 +193,43 @@
     });
 
     function openProductModal(produto) {
+        console.log("Produto recebido:", produto); // Adicionado para depuração.
+    
+        // Verifica se o produto contém os campos necessários
+        if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_unitario) {
+            console.error("Dados do produto estão incompletos:", produto);
+            return;
+        }
+    
         currentProduct = produto;
     
-        modalTitle.textContent = produto.descricao;
-        modalDescription.textContent = `Código: ${produto.codigo_do_produto}`;
         const valorFormatado = parseFloat(produto.valor_unitario).toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         });
-        document.getElementById('modal-unit-price').textContent = `Valor Unitário: ${valorFormatado}`;
     
-        // Configurar o valor inicial e a lógica de múltiplos
-        const quantidadeInicial = produto.quantidade; // Quantidade do banco
-        quantityInput.value = quantidadeInicial;
+        // Preencher os campos do modal
+        document.getElementById("modal-item").textContent = `${produto.descricao} - Código: ${produto.codigo_do_produto}`;
+        document.getElementById("modal-unit-price").textContent = valorFormatado;
+        document.getElementById("quantity-input").value = produto.quantidade || 1; // Garantir um valor mínimo de 1.
+        document.getElementById("modal-total-price").textContent = valorFormatado;
     
-        // Adicionar validação ao input
+        // Atualiza o total dinamicamente ao alterar a quantidade.
+        const quantityInput = document.getElementById("quantity-input");
         quantityInput.addEventListener("input", () => {
-            const inputValue = parseInt(quantityInput.value, 10);
-    
-            if (isNaN(inputValue) || inputValue < quantidadeInicial) {
-                quantityInput.value = quantidadeInicial;
-            } else if (inputValue % quantidadeInicial !== 0) {
-                // Ajusta para o múltiplo mais próximo
-                const nearestMultiple = Math.round(inputValue / quantidadeInicial) * quantidadeInicial;
-                quantityInput.value = nearestMultiple;
-            }
+            const quantidade = parseInt(quantityInput.value, 10) || 1; // Garante que seja pelo menos 1.
+            const total = (quantidade * parseFloat(produto.valor_unitario)).toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+            document.getElementById("modal-total-price").textContent = total;
         });
     
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
+    
+    
     
 
     addToOrderButton.addEventListener("click", () => {
