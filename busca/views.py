@@ -18,9 +18,15 @@ def busca_produtos_api(request):
     ) | Produto.objects.filter(
         codigo_do_produto__icontains=query
     )
-    # Retorne todos os campos necessários para o modal
-    data = list(resultados.values('descricao', 'codigo_do_produto', 'quantidade', 'valor_unitario', 'valor'))
+    # Retorna mais informações do produto
+    data = list(resultados.values(
+        'descricao', 
+        'codigo_do_produto', 
+        'quantidade', 
+        'valor_unitario'
+    ))
     return JsonResponse(data, safe=False)
+
 from django.shortcuts import render
 
 def pedido(request):

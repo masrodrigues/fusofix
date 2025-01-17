@@ -111,164 +111,202 @@
     </div>
     
 
-    <!-- Modal -->
-    <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 w-1/2 relative">
-            <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
-            <div id="modal-content">
-                <h2 id="modal-title" class="text-xl font-bold"></h2>
-                <p id="modal-description"></p>
-                <div class="mt-4 flex items-center justify-between">
-                    <input 
-                        type="number" 
-                        id="quantity-input" 
-                        class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
-                        value="1" 
-                        min="1"
-                    >
-                    <button id="add-to-order" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">
-                        Adicionar ao Pedido
-                    </button>
-                </div>
+  <!-- Modal -->
+  <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-1/2 relative" id="modal-content-container">
+        <!-- Botão de Fechar -->
+        <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
+        <div id="modal-content">
+            <h2 id="modal-title" class="text-xl font-bold"></h2>
+            <p id="modal-description"></p>
+            <p id="modal-unit-price" class="text-gray-700 mt-2"></p> <!-- Novo elemento para valor unitário -->
+            <div class="mt-4 flex items-center justify-between">
+                <input 
+                    type="number" 
+                    id="quantity-input" 
+                    class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
+                    value="1" 
+                    min="1"
+                >
+                <button id="add-to-order" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">
+                    Adicionar ao Pedido
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const searchInput = document.getElementById("search-input");
-        const searchResults = document.getElementById("search-results");
-        const productModal = document.getElementById("product-modal");
-        const closeModal = document.getElementById("close-modal");
-        const modalTitle = document.getElementById("modal-title");
-        const modalDescription = document.getElementById("modal-description");
-        const addToOrderButton = document.getElementById("add-to-order");
-        const quantityInput = document.getElementById("quantity-input");
-        const orderCount = document.getElementById("order-count");
 
-        let currentProduct = null;
-        let order = JSON.parse(localStorage.getItem("order")) || [];
 
-        searchInput.addEventListener("input", async () => {
-            const query = searchInput.value.trim();
-            searchResults.innerHTML = "";
-            if (query.length > 2) {
-                const response = await fetch(`/api/search?q=${query}`);
-                const produtos = await response.json();
-                searchResults.classList.remove("hidden");
+<script>
+    const searchInput = document.getElementById("search-input");
+    const searchResults = document.getElementById("search-results");
+    const productModal = document.getElementById("product-modal");
+    const closeModal = document.getElementById("close-modal");
+    const modalContentContainer = document.getElementById("modal-content-container");
+    const modalTitle = document.getElementById("modal-title");
+    const modalDescription = document.getElementById("modal-description");
+    const addToOrderButton = document.getElementById("add-to-order");
+    const quantityInput = document.getElementById("quantity-input");
+    const orderCount = document.getElementById("order-count");
 
-                produtos.forEach(produto => {
-                    const li = document.createElement("li");
-                    li.classList.add("px-4", "py-2", "hover:bg-gray-200", "cursor-pointer");
-                    li.textContent = `${produto.descricao} - ${produto.codigo_do_produto}`;
-                    li.addEventListener("click", () => openProductModal(produto));
-                    searchResults.appendChild(li);
-                });
-            } else {
-                searchResults.classList.add("hidden");
-            }
-        });
+    let currentProduct = null;
+    let order = JSON.parse(localStorage.getItem("order")) || [];
 
-        function openProductModal(produto) {
-            currentProduct = produto;
-            modalTitle.textContent = produto.descricao;
-            modalDescription.textContent = `Código: ${produto.codigo_do_produto}`;
-            quantityInput.value = 1;
-            productModal.classList.remove("hidden");
+    searchInput.addEventListener("input", async () => {
+        const query = searchInput.value.trim();
+        searchResults.innerHTML = "";
+        if (query.length > 2) {
+            const response = await fetch(`/api/search?q=${query}`);
+            const produtos = await response.json();
+            searchResults.classList.remove("hidden");
+
+            produtos.forEach(produto => {
+                const li = document.createElement("li");
+                li.classList.add("px-4", "py-2", "hover:bg-gray-200", "cursor-pointer");
+                li.textContent = `${produto.descricao} - ${produto.codigo_do_produto}`;
+                li.addEventListener("click", () => openProductModal(produto));
+                searchResults.appendChild(li);
+            });
+        } else {
             searchResults.classList.add("hidden");
         }
+    });
 
-        closeModal.addEventListener("click", () => {
-            productModal.classList.add("hidden");
+    function openProductModal(produto) {
+        currentProduct = produto;
+    
+        modalTitle.textContent = produto.descricao;
+        modalDescription.textContent = `Código: ${produto.codigo_do_produto}`;
+        const valorFormatado = parseFloat(produto.valor_unitario).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
         });
-
-        addToOrderButton.addEventListener("click", () => {
-            const quantity = parseInt(quantityInput.value, 10);
-            if (currentProduct && quantity > 0) {
-                addToOrder(currentProduct, quantity);
-                productModal.classList.add("hidden");
+        document.getElementById('modal-unit-price').textContent = `Valor Unitário: ${valorFormatado}`;
+    
+        // Configurar o valor inicial e a lógica de múltiplos
+        const quantidadeInicial = produto.quantidade; // Quantidade do banco
+        quantityInput.value = quantidadeInicial;
+    
+        // Adicionar validação ao input
+        quantityInput.addEventListener("input", () => {
+            const inputValue = parseInt(quantityInput.value, 10);
+    
+            if (isNaN(inputValue) || inputValue < quantidadeInicial) {
+                quantityInput.value = quantidadeInicial;
+            } else if (inputValue % quantidadeInicial !== 0) {
+                // Ajusta para o múltiplo mais próximo
+                const nearestMultiple = Math.round(inputValue / quantidadeInicial) * quantidadeInicial;
+                quantityInput.value = nearestMultiple;
             }
         });
+    
+        productModal.classList.remove("hidden");
+        searchResults.classList.add("hidden");
+    }
+    
 
-        function addToOrder(produto, quantity) {
-            const existingProduct = order.find(p => p.codigo === produto.codigo_do_produto);
+    addToOrderButton.addEventListener("click", () => {
+        const quantity = parseInt(quantityInput.value, 10);
+        if (currentProduct && quantity >= currentProduct.quantidade) {
+            addToOrder(currentProduct, quantity);
+            closeModalFunction();
+        }
+    });
 
-            if (existingProduct) {
-                existingProduct.quantidade += quantity;
-                existingProduct.total += produto.valor_unitario * quantity;
-            } else {
-                order.push({
-                    descricao: produto.descricao,
-                    codigo: produto.codigo_do_produto,
-                    quantidade: quantity,
-                    valor_unitario: produto.valor_unitario,
-                    total: produto.valor_unitario * quantity
-                });
-            }
+    function addToOrder(produto, quantity) {
+        const existingProduct = order.find(p => p.codigo === produto.codigo_do_produto);
 
-            localStorage.setItem("order", JSON.stringify(order));
-            updateOrderCount();
+        if (existingProduct) {
+            existingProduct.quantidade += quantity;
+            existingProduct.total += produto.valor_unitario * quantity;
+        } else {
+            order.push({
+                descricao: produto.descricao,
+                codigo: produto.codigo_do_produto,
+                quantidade: quantity,
+                valor_unitario: produto.valor_unitario,
+                total: produto.valor_unitario * quantity
+            });
         }
 
-        function updateOrderCount() {
-            const totalProducts = order.reduce((sum, p) => sum + p.quantidade, 0);
-            orderCount.textContent = totalProducts;
-            if (totalProducts > 0) {
-                orderCount.classList.remove("hidden");
-            } else {
-                orderCount.classList.add("hidden");
-            }
+        localStorage.setItem("order", JSON.stringify(order));
+        updateOrderCount();
+    }
+
+    function updateOrderCount() {
+        const totalProducts = order.reduce((sum, p) => sum + p.quantidade, 0);
+        orderCount.textContent = totalProducts;
+        if (totalProducts > 0) {
+            orderCount.classList.remove("hidden");
+        } else {
+            orderCount.classList.add("hidden");
         }
+    }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            updateOrderCount();
-        });
+    function closeModalFunction() {
+        productModal.classList.add("hidden");
+    }
 
-        document.addEventListener("click", (event) => {
-            if (!searchResults.contains(event.target) && event.target !== searchInput) {
-                searchResults.classList.add("hidden");
-            }
-        });
+    // Fechar ao clicar no botão de fechar
+    closeModal.addEventListener("click", closeModalFunction);
 
-        const carousel = document.getElementById("carousel");
-        let currentIndex = 0;
-        const carouselItems = carousel.querySelectorAll(".carousel-item");
-        const totalItems = carouselItems.length;
-
-        function showSlide(index) {
-            const offset = index * carousel.clientWidth;
-            carousel.scrollTo({ left: offset, behavior: "smooth" });
+    // Fechar ao clicar fora do conteúdo do modal
+    productModal.addEventListener("click", (event) => {
+        if (!modalContentContainer.contains(event.target)) {
+            closeModalFunction();
         }
+    });
 
-        function nextSlide() {
-            currentIndex = (currentIndex + 1) % totalItems;
-            showSlide(currentIndex);
+    document.addEventListener("DOMContentLoaded", () => {
+        updateOrderCount();
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!searchResults.contains(event.target) && event.target !== searchInput) {
+            searchResults.classList.add("hidden");
         }
+    });
 
-        function prevSlide() {
-            currentIndex = (currentIndex - 1 + totalItems) % totalItems;
-            showSlide(currentIndex);
-        }
+    const carousel = document.getElementById("carousel");
+    let currentIndex = 0;
+    const carouselItems = carousel.querySelectorAll(".carousel-item");
+    const totalItems = carouselItems.length;
 
-        let autoSlide = setInterval(nextSlide, 5000);
+    function showSlide(index) {
+        const offset = index * carousel.clientWidth;
+        carousel.scrollTo({ left: offset, behavior: "smooth" });
+    }
 
-        carousel.addEventListener("mouseenter", () => clearInterval(autoSlide));
-        carousel.addEventListener("mouseleave", () => autoSlide = setInterval(nextSlide, 5000));
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % totalItems;
+        showSlide(currentIndex);
+    }
 
-        // Adiciona botões para controle manual
-        const prevButton = document.createElement("button");
-        const nextButton = document.createElement("button");
+    function prevSlide() {
+        currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+        showSlide(currentIndex);
+    }
 
-        prevButton.innerHTML = "&lt;";
-        nextButton.innerHTML = "&gt;";
-        prevButton.classList.add("absolute", "top-1/2", "-translate-y-1/2", "left-2", "bg-gray-800", "text-white", "p-2", "rounded-full", "hover:bg-gray-700");
-        nextButton.classList.add("absolute", "top-1/2", "-translate-y-1/2", "right-2", "bg-gray-800", "text-white", "p-2", "rounded-full", "hover:bg-gray-700");
+    let autoSlide = setInterval(nextSlide, 5000);
 
-        prevButton.addEventListener("click", prevSlide);
-        nextButton.addEventListener("click", nextSlide);
+    carousel.addEventListener("mouseenter", () => clearInterval(autoSlide));
+    carousel.addEventListener("mouseleave", () => autoSlide = setInterval(nextSlide, 5000));
 
-        carousel.parentElement.appendChild(prevButton);
-        carousel.parentElement.appendChild(nextButton);
+    // Adiciona botões para controle manual
+    const prevButton = document.createElement("button");
+    const nextButton = document.createElement("button");
 
-    </script>
+    prevButton.innerHTML = "&lt;";
+    nextButton.innerHTML = "&gt;";
+    prevButton.classList.add("absolute", "top-1/2", "-translate-y-1/2", "left-2", "bg-gray-800", "text-white", "p-2", "rounded-full", "hover:bg-gray-700");
+    nextButton.classList.add("absolute", "top-1/2", "-translate-y-1/2", "right-2", "bg-gray-800", "text-white", "p-2", "rounded-full", "hover:bg-gray-700");
+
+    prevButton.addEventListener("click", prevSlide);
+    nextButton.addEventListener("click", nextSlide);
+
+    carousel.parentElement.appendChild(prevButton);
+    carousel.parentElement.appendChild(nextButton);
+</script>
 </body>
 </html>
