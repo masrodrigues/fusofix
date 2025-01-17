@@ -37,7 +37,7 @@
             <!-- Itens do pedido serão renderizados aqui -->
         </ul>
         <div class="mt-4 flex justify-between items-center">
-            <p class="text-lg font-bold">Total: <span id="order-total">R$ 0.00</span></p>
+            <p class="text-lg font-extrabold">Total: <span id="order-total">R$ 0.00</span></p>
             <button 
                 id="save-order" 
                 class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow"
@@ -149,46 +149,89 @@
             clientNameInput.value = "";
         });
 
-        // Gerar PDF com logo e tabela estilizada
         function generatePDF(clientName) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
+        
             const logo = new Image();
             logo.src = "{% static 'images/logo-fusofix.png' %}";
-
+        
+            // Obter a data atual formatada
+            const currentDate = new Date();
+            const formattedDate = currentDate.toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            });
+        
             logo.onload = function () {
+                // Obter as proporções originais do logo
+                const logoWidth = 40; // Largura desejada
+                const logoHeight = (logo.height / logo.width) * logoWidth; // Altura proporcional ao logoWidth
+        
                 // Cabeçalho com logo e título
-                doc.addImage(logo, "PNG", 10, 10, 30, 20);
-                doc.setFontSize(18);
+                doc.addImage(logo, "PNG", 10, 10, logoWidth, logoHeight); // Redimensionar proporcionalmente
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(20);
                 doc.text("Resumo do Pedido", 150, 20, null, null, "right");
+        
+                // Informações do cliente e data
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(14);
+                doc.text(`Cliente: ${clientName}`, 10, logoHeight + 20);
                 doc.setFontSize(12);
-                doc.text(`Cliente: ${clientName}`, 10, 40);
-
+                doc.text(`Data do Pedido: ${formattedDate}`, 10, logoHeight + 30);
+        
+                // Linha divisória
+                doc.setDrawColor(242, 47, 81); // Cor do logo Fusofix
+                doc.setLineWidth(0.5);
+                doc.line(10, logoHeight + 35, 200, logoHeight + 35);
+        
                 // Tabela
-                const headers = [["Nome", "Quantidade", "Valor"]];
+                const headers = [["Nome", "Quantidade", "Valor Total"]];
                 const data = order.map(item => [
-                    item.descricao, 
-                    item.quantidade, 
+                    item.descricao,
+                    item.quantidade,
                     `R$ ${item.total.toFixed(2)}`
                 ]);
-
+        
+                // Total geral
                 let total = order.reduce((sum, item) => sum + item.total, 0);
                 data.push(["", "Total", `R$ ${total.toFixed(2)}`]);
-
+        
                 doc.autoTable({
-                    startY: 50,
+                    startY: logoHeight + 40,
                     head: headers,
                     body: data,
-                    theme: 'grid',
-                    headStyles: { fillColor: [0, 150, 0] }, // Verde no cabeçalho
-                    styles: { fontSize: 10 },
-                    columnStyles: { 0: { halign: 'left' }, 2: { halign: 'right' } }
+                    theme: "grid",
+                    headStyles: { fillColor: [242, 47, 81], textColor: [255, 255, 255], fontSize: 12 }, // Cor Fusofix no cabeçalho
+                    styles: { fontSize: 10, cellPadding: 3 },
+                    bodyStyles: (rowIndex, colIndex) => {
+                        if (rowIndex === data.length - 1) return { fontStyle: "bold" }; // Total em negrito
+                        return {};
+                    },
+                    columnStyles: {
+                        0: { halign: "left", cellWidth: 90 }, // Nome
+                        1: { halign: "center", cellWidth: 40 }, // Quantidade
+                        2: { halign: "right", cellWidth: 50 }   // Valor Total
+                    }
                 });
-
+        
+                // Rodapé
+                const pageHeight = doc.internal.pageSize.height;
+                doc.setFontSize(10);
+                doc.text("Fusofix 2025. Obrigado pela preferência!", 105, pageHeight - 10, null, null, "center");
+        
+                // Salvar o PDF
                 doc.save(`Pedido_${clientName.replace(/\s/g, "_")}.pdf`);
             };
+        
+            // Tratamento para erro ao carregar o logo
+            logo.onerror = function () {
+                alert("Erro ao carregar o logo para o PDF.");
+            };
         }
+        
 
         // Renderizar o pedido ao carregar a página
         document.addEventListener("DOMContentLoaded", renderOrder);
