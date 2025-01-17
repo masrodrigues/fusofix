@@ -132,7 +132,8 @@
                         <td id="modal-item" class="p-2"></td>
                         <td class="p-2">PC</td>
                         <td id="modal-unit-price" class="p-2"></td>
-                        <td class="p-2">
+                        <td class="p-2 flex items-center gap-2">
+                            <button id="decrease-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">-</button>
                             <input 
                                 type="number" 
                                 id="quantity-input" 
@@ -140,7 +141,9 @@
                                 value="1" 
                                 min="1"
                             >
+                            <button id="increase-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">+</button>
                         </td>
+                        
                         <td id="modal-total-price" class="p-2"></td>
                     </tr>
                 </tbody>
@@ -195,7 +198,6 @@
     function openProductModal(produto) {
         console.log("Produto recebido:", produto);
     
-        // Verifica se o produto contém os campos necessários
         if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_unitario || !produto.quantidade) {
             console.error("Dados do produto estão incompletos:", produto);
             return;
@@ -208,36 +210,60 @@
             currency: 'BRL'
         });
     
-        // Preencher os campos no modal
         document.getElementById("modal-item").textContent = `${produto.descricao} - Código: ${produto.codigo_do_produto}`;
         document.getElementById("modal-unit-price").textContent = valorFormatado;
-        document.getElementById("quantity-input").value = produto.quantidade; // Valor inicial baseado no banco
+        document.getElementById("quantity-input").value = produto.quantidade;
         document.getElementById("modal-total-price").textContent = valorFormatado;
     
-        // Atualiza o total dinamicamente ao alterar a quantidade
         const quantityInput = document.getElementById("quantity-input");
-        quantityInput.addEventListener("input", () => {
-            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
+        const decreaseQuantity = document.getElementById("decrease-quantity");
+        const increaseQuantity = document.getElementById("increase-quantity");
     
-            // Ajusta para o múltiplo mais próximo da quantidade do banco
-            if (quantidade < produto.quantidade) {
-                quantidade = produto.quantidade; // Garante que a quantidade mínima seja do banco
-            } else if (quantidade % produto.quantidade !== 0) {
-                quantidade = Math.floor(quantidade / produto.quantidade) * produto.quantidade; // Ajusta para múltiplo mais próximo menor
-                quantityInput.value = quantidade; // Ajusta visualmente o input
-            }
-    
-            // Calcula o total
+        function updateTotal(quantidade) {
             const total = (quantidade * parseFloat(produto.valor_unitario)).toLocaleString('pt-BR', {
                 style: 'currency',
                 currency: 'BRL'
             });
             document.getElementById("modal-total-price").textContent = total;
+        }
+    
+        // Atualiza o total ao alterar o valor do input
+        quantityInput.addEventListener("input", () => {
+            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
+    
+            if (quantidade < produto.quantidade) {
+                quantidade = produto.quantidade;
+            } else if (quantidade % produto.quantidade !== 0) {
+                quantidade = Math.floor(quantidade / produto.quantidade) * produto.quantidade;
+                quantityInput.value = quantidade;
+            }
+    
+            updateTotal(quantidade);
+        });
+    
+        // Botão de diminuir a quantidade
+        decreaseQuantity.addEventListener("click", () => {
+            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
+    
+            if (quantidade > produto.quantidade) {
+                quantidade -= produto.quantidade;
+                quantityInput.value = quantidade;
+                updateTotal(quantidade);
+            }
+        });
+    
+        // Botão de aumentar a quantidade
+        increaseQuantity.addEventListener("click", () => {
+            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
+            quantidade += produto.quantidade;
+            quantityInput.value = quantidade;
+            updateTotal(quantidade);
         });
     
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
+    
     
     
     
