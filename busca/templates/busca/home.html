@@ -41,7 +41,9 @@
     <!-- Header -->
     <header class="bg-gray-100 py-4 flex items-center justify-between relative">
         <div class="pl-8">
-            <img src="{% static 'images/logo-belenus.png' %}" alt="Logo Belenus" class="w-auto h-14">
+            <a href="{% url 'home' %}">
+                <img src="{% static 'images/logo-belenus.png' %}" alt="Logo Belenus" class="w-auto h-14">
+            </a>
         </div>
         <div class="flex-grow text-center">
             <h1 class="text-3xl font-bold text-gray-800">Belenus Produtos</h1>
@@ -49,8 +51,8 @@
         <div class="pr-8">
             <img src="{% static 'images/logo-fusofix.png' %}" alt="Logo Fusofix" class="w-auto h-14">
         </div>
-        
     </header>
+    
 
     <!-- Barra de Busca -->
 <div class="bg-yellow-400 w-full py-4">
