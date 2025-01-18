@@ -46,6 +46,36 @@
         .carousel-container {
             margin-top: 20px;
         }
+        input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+    -webkit-appearance: none;
+    appearance: none;
+}
+/* Sombras customizadas */
+.shadow-lg {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Efeito hover nos botões */
+button:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease-in-out;
+}
+#modal-item-descricao {
+    margin-bottom: 0.5rem; /* Espaço entre descrição e código */
+}
+
+#modal-item-codigo {
+    color: #4B5563; /* Cor cinza suave */
+    font-size: 0.875rem; /* Tamanho menor */
+}
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans">
@@ -126,52 +156,63 @@
     
 
   <!-- Modal -->
-<div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 w-3/4 relative" id="modal-content-container">
+  <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-4xl shadow-lg relative">
         <!-- Botão de Fechar -->
-        <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
-        <div id="modal-content">
+        <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <!-- Conteúdo do Modal -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Detalhes do Produto</h2>
+        <div id="modal-content" class="overflow-auto">
             <table class="table-auto w-full text-left border-collapse">
                 <thead>
                     <tr>
-                        <th class="border-b p-2 font-bold text-gray-700">Item</th>
-                        <th class="border-b p-2 font-bold text-gray-700">Unidade</th>
-                        <th class="border-b p-2 font-bold text-gray-700">Valor Unitário</th>
-                        <th class="border-b p-2 font-bold text-gray-700">Quantidade</th>
-                        <th class="border-b p-2 font-bold text-gray-700">Total</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Item</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Unidade</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Valor Unitário</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Quantidade</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td id="modal-item" class="p-2"></td>
-                        <td class="p-2">PC</td>
-                        <td id="modal-unit-price" class="p-2"></td>
+                        <td id="modal-item" class="p-2 text-sm text-gray-800 font-medium">
+                            <div id="modal-item-descricao" class="text-gray-800 font-semibold">Descrição do Produto</div>
+                            <div id="modal-item-codigo" class="text-gray-600 text-sm mt-1">Código: Código Produto Aqui</div>
+                        </td>
+                        
+                        <td class="p-2 text-sm text-gray-800">PC</td>
+                        <td id="modal-unit-price" class="p-2 text-sm text-gray-800"></td>
                         <td class="p-2 flex items-center gap-2">
                             <button id="decrease-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">-</button>
                             <input 
-                            type="number" 
-                            id="quantity-input" 
-                            class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
-                            value="1" 
-                            min="1"
-                            style="-moz-appearance: textfield; -webkit-appearance: none; appearance: none; text-align: center;"
-                        >
-                        
+                                type="number" 
+                                id="quantity-input" 
+                                class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
+                                value="1" 
+                                min="1"
+                            >
                             <button id="increase-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">+</button>
                         </td>
-                        
-                        <td id="modal-total-price" class="p-2"></td>
+                        <td id="modal-total-price" class="p-2 text-sm text-gray-800"></td>
                     </tr>
                 </tbody>
             </table>
-            <div class="mt-4 flex justify-end">
-                <button id="add-to-order" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">
-                    Adicionar ao Pedido
-                </button>
-            </div>
+        </div>
+
+        <!-- Botão de Ação -->
+        <div class="mt-6 flex justify-end">
+            <button id="add-to-order" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-md shadow-md font-semibold">
+                Adicionar ao Pedido
+            </button>
         </div>
     </div>
 </div>
+
 
 
 
@@ -226,22 +267,24 @@
             console.error("Dados do produto estão incompletos:", produto);
             return;
         }
-
+    
         currentProduct = produto;
-
+    
         const valorFormatado = parseFloat(produto.valor_unitario).toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         });
-
-        document.getElementById("modal-item").textContent = `${produto.descricao} - Código: ${produto.codigo_do_produto}`;
+    
+        // Atualizando a descrição e o código em elementos separados
+        document.getElementById("modal-item-descricao").textContent = produto.descricao;
+        document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
         document.getElementById("modal-unit-price").textContent = valorFormatado;
         document.getElementById("quantity-input").value = produto.quantidade;
         updateTotal(produto.quantidade, produto.valor_unitario);
-
+    
         const decreaseQuantity = document.getElementById("decrease-quantity");
         const increaseQuantity = document.getElementById("increase-quantity");
-
+    
         function updateTotal(quantidade, valorUnitario) {
             const total = (quantidade * parseFloat(valorUnitario)).toLocaleString('pt-BR', {
                 style: 'currency',
@@ -249,31 +292,31 @@
             });
             document.getElementById("modal-total-price").textContent = total;
         }
-
+    
         quantityInput.addEventListener("input", () => {
             let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
             if (quantidade < 1) quantidade = 1;
             updateTotal(quantidade, produto.valor_unitario);
         });
-
+    
         decreaseQuantity.addEventListener("click", () => {
             let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
             if (quantidade > 1) quantidade -= 1;
             quantityInput.value = quantidade;
             updateTotal(quantidade, produto.valor_unitario);
         });
-
+    
         increaseQuantity.addEventListener("click", () => {
             let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
             quantidade += 1;
             quantityInput.value = quantidade;
             updateTotal(quantidade, produto.valor_unitario);
         });
-
+    
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
-
+    
     addToOrderButton.addEventListener("click", () => {
         const quantity = parseInt(quantityInput.value, 10);
         if (currentProduct && quantity >= currentProduct.quantidade) {
