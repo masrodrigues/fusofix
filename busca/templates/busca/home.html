@@ -6,6 +6,18 @@
     <title>Busca de Produtos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+    
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
         .carousel {
             scroll-snap-type: x mandatory;
             overflow-x: hidden;
@@ -170,16 +182,24 @@
     const productModal = document.getElementById("product-modal");
     const closeModal = document.getElementById("close-modal");
     const modalContentContainer = document.getElementById("modal-content-container");
-    const modalTitle = document.getElementById("modal-title");
-    const modalDescription = document.getElementById("modal-description");
     const addToOrderButton = document.getElementById("add-to-order");
     const quantityInput = document.getElementById("quantity-input");
     const orderCount = document.getElementById("order-count");
 
     let currentProduct = null;
     let order = JSON.parse(localStorage.getItem("order")) || [];
+    let debounceTimeout;
 
-    searchInput.addEventListener("input", async () => {
+    // Função debounce para atrasar a execução da busca
+    function debounce(func, delay) {
+        return (...args) => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => func(...args), delay);
+        };
+    }
+
+    // Busca com debounce e animação
+    async function handleSearch() {
         const query = searchInput.value.trim();
         searchResults.innerHTML = "";
         if (query.length > 2) {
@@ -189,7 +209,7 @@
 
             produtos.forEach(produto => {
                 const li = document.createElement("li");
-                li.classList.add("px-4", "py-2", "hover:bg-gray-200", "cursor-pointer");
+                li.classList.add("px-4", "py-2", "hover:bg-gray-200", "cursor-pointer", "fade-in");
                 li.textContent = `${produto.descricao} - ${produto.codigo_do_produto}`;
                 li.addEventListener("click", () => openProductModal(produto));
                 searchResults.appendChild(li);
@@ -197,33 +217,31 @@
         } else {
             searchResults.classList.add("hidden");
         }
-    });
+    }
+
+    searchInput.addEventListener("input", debounce(handleSearch, 600));
 
     function openProductModal(produto) {
-        console.log("Produto recebido:", produto);
-    
         if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_unitario || !produto.quantidade) {
             console.error("Dados do produto estão incompletos:", produto);
             return;
         }
-    
+
         currentProduct = produto;
-    
+
         const valorFormatado = parseFloat(produto.valor_unitario).toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         });
-    
+
         document.getElementById("modal-item").textContent = `${produto.descricao} - Código: ${produto.codigo_do_produto}`;
         document.getElementById("modal-unit-price").textContent = valorFormatado;
-        document.getElementById("quantity-input").value = produto.quantidade; // Usar a quantidade inicial do banco
-        updateTotal(produto.quantidade, produto.valor_unitario); // Calcula o total com base na quantidade inicial do banco
-    
-        // Lógica de botões
-        const quantityInput = document.getElementById("quantity-input");
+        document.getElementById("quantity-input").value = produto.quantidade;
+        updateTotal(produto.quantidade, produto.valor_unitario);
+
         const decreaseQuantity = document.getElementById("decrease-quantity");
         const increaseQuantity = document.getElementById("increase-quantity");
-    
+
         function updateTotal(quantidade, valorUnitario) {
             const total = (quantidade * parseFloat(valorUnitario)).toLocaleString('pt-BR', {
                 style: 'currency',
@@ -231,34 +249,30 @@
             });
             document.getElementById("modal-total-price").textContent = total;
         }
-    
+
         quantityInput.addEventListener("input", () => {
             let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
-            if (quantidade < 1) quantidade = 1; // Garante que a quantidade mínima seja 1
+            if (quantidade < 1) quantidade = 1;
             updateTotal(quantidade, produto.valor_unitario);
         });
-    
+
         decreaseQuantity.addEventListener("click", () => {
             let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
-            if (quantidade > 1) quantidade -= 1; // Permite diminuir até o mínimo de 1
+            if (quantidade > 1) quantidade -= 1;
             quantityInput.value = quantidade;
             updateTotal(quantidade, produto.valor_unitario);
         });
-    
+
         increaseQuantity.addEventListener("click", () => {
             let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
-            quantidade += 1; // Incrementa a quantidade
+            quantidade += 1;
             quantityInput.value = quantidade;
             updateTotal(quantidade, produto.valor_unitario);
         });
-    
+
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
-    
-    
-    
-    
 
     addToOrderButton.addEventListener("click", () => {
         const quantity = parseInt(quantityInput.value, 10);
@@ -289,7 +303,7 @@
     }
 
     function updateOrderCount() {
-        const totalProducts = order.length; // Conta apenas itens únicos no carrinho
+        const totalProducts = order.length;
         orderCount.textContent = totalProducts;
         if (totalProducts > 0) {
             orderCount.classList.remove("hidden");
@@ -297,16 +311,13 @@
             orderCount.classList.add("hidden");
         }
     }
-    
 
     function closeModalFunction() {
         productModal.classList.add("hidden");
     }
 
-    // Fechar ao clicar no botão de fechar
     closeModal.addEventListener("click", closeModalFunction);
 
-    // Fechar ao clicar fora do conteúdo do modal
     productModal.addEventListener("click", (event) => {
         if (!modalContentContainer.contains(event.target)) {
             closeModalFunction();
@@ -348,7 +359,6 @@
     carousel.addEventListener("mouseenter", () => clearInterval(autoSlide));
     carousel.addEventListener("mouseleave", () => autoSlide = setInterval(nextSlide, 5000));
 
-    // Adiciona botões para controle manual
     const prevButton = document.createElement("button");
     const nextButton = document.createElement("button");
 
@@ -363,5 +373,6 @@
     carousel.parentElement.appendChild(prevButton);
     carousel.parentElement.appendChild(nextButton);
 </script>
+
 </body>
 </html>
