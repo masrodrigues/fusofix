@@ -40,7 +40,12 @@
             <!-- Itens do pedido serão renderizados aqui -->
         </ul>
         <div class="mt-4 flex justify-between items-center">
-            <p class="text-lg font-extrabold">Total: <span id="order-total">R$ 0.00</span></p>
+            <button 
+                id="send-email" 
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow"
+            >
+                Enviar por Email
+            </button>
             <button 
                 id="save-order" 
                 class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow"
@@ -48,6 +53,7 @@
                 Salvar Pedido
             </button>
         </div>
+        
     </div>
 
     <!-- Modal para salvar pedido -->
@@ -79,18 +85,20 @@
         const orderTotalContainer = document.getElementById("order-total");
         const clearCartButton = document.getElementById("clear-cart");
         const saveOrderButton = document.getElementById("save-order");
+        const sendEmailButton = document.getElementById("send-email");
         const saveModal = document.getElementById("save-modal");
         const closeSaveModalButton = document.getElementById("close-save-modal");
         const confirmSaveButton = document.getElementById("confirm-save");
         const clientNameInput = document.getElementById("client-name");
-
+    
         let order = JSON.parse(localStorage.getItem("order")) || [];
-
+        let isEmailFlow = false;
+    
         // Renderizar os itens do pedido
         function renderOrder() {
             orderItemsContainer.innerHTML = "";
             let total = 0;
-
+    
             if (order.length === 0) {
                 orderItemsContainer.innerHTML = `
                     <li class="text-gray-600 text-center py-4">
@@ -100,10 +108,10 @@
                 orderTotalContainer.textContent = "R$ 0.00";
                 return;
             }
-
+    
             order.forEach(item => {
                 total += item.total;
-
+    
                 const li = document.createElement("li");
                 li.className = "flex justify-between border-b pb-2";
                 li.innerHTML = `
@@ -117,10 +125,10 @@
                 `;
                 orderItemsContainer.appendChild(li);
             });
-
+    
             orderTotalContainer.textContent = `R$ ${total.toFixed(2)}`;
         }
-
+    
         // Limpar o carrinho
         clearCartButton.addEventListener("click", () => {
             if (confirm("Tem certeza de que deseja limpar o carrinho?")) {
@@ -129,67 +137,73 @@
                 renderOrder();
             }
         });
-
+    
         // Abrir modal para salvar pedido
         saveOrderButton.addEventListener("click", () => {
+            isEmailFlow = false;
             saveModal.classList.remove("hidden");
         });
-
+    
+        // Abrir modal para enviar email
+        sendEmailButton.addEventListener("click", () => {
+            isEmailFlow = true;
+            saveModal.classList.remove("hidden");
+        });
+    
         // Fechar modal
         closeSaveModalButton.addEventListener("click", () => {
             saveModal.classList.add("hidden");
         });
-
-        // Confirmar e salvar pedido
+    
+        // Confirmar e salvar pedido ou enviar email
         confirmSaveButton.addEventListener("click", () => {
             const clientName = clientNameInput.value.trim();
             if (!clientName) {
                 alert("Por favor, insira o nome do cliente.");
                 return;
             }
-            generatePDF(clientName);
+    
+            generatePDF(clientName, isEmailFlow);
             saveModal.classList.add("hidden");
             clientNameInput.value = "";
         });
-
-        function generatePDF(clientName) {
+    
+        function generatePDF(clientName, isEmail = false) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-        
+    
             const logo = new Image();
             logo.src = "{% static 'images/logo-fusofix.png' %}";
-        
-            // Obter a data atual formatada
+    
             const currentDate = new Date();
             const formattedDate = currentDate.toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
             });
-        
+    
             logo.onload = function () {
-                // Obter as proporções originais do logo
-                const logoWidth = 40; // Largura desejada
-                const logoHeight = (logo.height / logo.width) * logoWidth; // Altura proporcional ao logoWidth
-        
+                const logoWidth = 40;
+                const logoHeight = (logo.height / logo.width) * logoWidth;
+    
                 // Cabeçalho com logo e título
-                doc.addImage(logo, "PNG", 10, 10, logoWidth, logoHeight); // Redimensionar proporcionalmente
+                doc.addImage(logo, "PNG", 10, 10, logoWidth, logoHeight);
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(20);
                 doc.text("Resumo do Pedido", 150, 20, null, null, "right");
-        
+    
                 // Informações do cliente e data
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(14);
                 doc.text(`Cliente: ${clientName}`, 10, logoHeight + 20);
                 doc.setFontSize(12);
                 doc.text(`Data do Pedido: ${formattedDate}`, 10, logoHeight + 30);
-        
+    
                 // Linha divisória
-                doc.setDrawColor(242, 47, 81); // Cor do logo Fusofix
+                doc.setDrawColor(242, 47, 81);
                 doc.setLineWidth(0.5);
                 doc.line(10, logoHeight + 35, 200, logoHeight + 35);
-        
+    
                 // Tabela
                 const headers = [["Nome", "Quantidade", "Valor Total"]];
                 const data = order.map(item => [
@@ -197,48 +211,60 @@
                     item.quantidade,
                     `R$ ${item.total.toFixed(2)}`
                 ]);
-        
-                // Total geral
+    
                 let total = order.reduce((sum, item) => sum + item.total, 0);
                 data.push(["", "Total", `R$ ${total.toFixed(2)}`]);
-        
+    
                 doc.autoTable({
                     startY: logoHeight + 40,
                     head: headers,
                     body: data,
                     theme: "grid",
-                    headStyles: { fillColor: [242, 47, 81], textColor: [255, 255, 255], fontSize: 12 }, // Cor Fusofix no cabeçalho
+                    headStyles: { fillColor: [242, 47, 81], textColor: [255, 255, 255], fontSize: 12 },
                     styles: { fontSize: 10, cellPadding: 3 },
                     bodyStyles: (rowIndex, colIndex) => {
-                        if (rowIndex === data.length - 1) return { fontStyle: "bold" }; // Total em negrito
+                        if (rowIndex === data.length - 1) return { fontStyle: "bold" };
                         return {};
                     },
                     columnStyles: {
-                        0: { halign: "left", cellWidth: 90 }, // Nome
-                        1: { halign: "center", cellWidth: 40 }, // Quantidade
-                        2: { halign: "right", cellWidth: 50 }   // Valor Total
+                        0: { halign: "left", cellWidth: 90 },
+                        1: { halign: "center", cellWidth: 40 },
+                        2: { halign: "right", cellWidth: 50 }
                     }
                 });
-        
-                // Rodapé
-                const pageHeight = doc.internal.pageSize.height;
-                doc.setFontSize(10);
-                doc.text("Fusofix 2025. Obrigado pela preferência!", 105, pageHeight - 10, null, null, "center");
-        
-                // Salvar o PDF
-                doc.save(`Pedido_${clientName.replace(/\s/g, "_")}.pdf`);
+    
+                if (isEmail) {
+                    const pdfBlob = doc.output("blob");
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+                    const emailSubject = encodeURIComponent("Resumo do Pedido");
+                    const emailBody = encodeURIComponent(`Segue em anexo o resumo do pedido do cliente: ${clientName}.`);
+                    const emailLink = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+    
+                    const link = document.createElement("a");
+                    link.href = pdfUrl;
+                    link.download = `Pedido_${clientName.replace(/\s/g, "_")}.pdf`;
+                    link.click();
+    
+                    setTimeout(() => {
+                        window.open(emailLink, "_self");
+                    }, 500); // Pequeno atraso para garantir que o PDF seja baixado antes do e-mail abrir
+                } else {
+                    doc.save(`Pedido_${clientName.replace(/\s/g, "_")}.pdf`);
+                }
             };
-        
-            // Tratamento para erro ao carregar o logo
+    
             logo.onerror = function () {
                 alert("Erro ao carregar o logo para o PDF.");
             };
         }
-        
-
+    
         // Renderizar o pedido ao carregar a página
         document.addEventListener("DOMContentLoaded", renderOrder);
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    
+    
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
