@@ -275,10 +275,16 @@ button:hover {
             currency: 'BRL'
         });
     
-        // Atualizando a descrição e o código em elementos separados
+        // Atualizando a descrição e o código
         document.getElementById("modal-item-descricao").textContent = produto.descricao;
         document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
         document.getElementById("modal-unit-price").textContent = valorFormatado;
+    
+        // Atualizando a Unidade dinamicamente
+        const unidadeText = produto.quantidade > 100 ? "CT" : "PC";
+        document.querySelector("#modal-item + td").textContent = unidadeText;
+    
+        // Configurando quantidade inicial
         document.getElementById("quantity-input").value = produto.quantidade;
         updateTotal(produto.quantidade, produto.valor_unitario);
     
@@ -291,6 +297,10 @@ button:hover {
                 currency: 'BRL'
             });
             document.getElementById("modal-total-price").textContent = total;
+    
+            // Atualizando a Unidade dinamicamente com base na quantidade
+            const novaUnidade = quantidade > 100 ? "CT" : "PC";
+            document.querySelector("#modal-item + td").textContent = novaUnidade;
         }
     
         quantityInput.addEventListener("input", () => {
@@ -316,6 +326,7 @@ button:hover {
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
+    
     
     addToOrderButton.addEventListener("click", () => {
         const quantity = parseInt(quantityInput.value, 10);
