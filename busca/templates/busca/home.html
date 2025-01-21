@@ -173,7 +173,9 @@ button:hover {
                     <tr>
                         <th class="border-b p-2 font-bold text-gray-700 text-sm">Item</th>
                         <th class="border-b p-2 font-bold text-gray-700 text-sm">Unidade</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Valor Unitário</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Venda</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Revenda</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Atacado</th>
                         <th class="border-b p-2 font-bold text-gray-700 text-sm">Quantidade</th>
                         <th class="border-b p-2 font-bold text-gray-700 text-sm">Total</th>
                     </tr>
@@ -184,9 +186,10 @@ button:hover {
                             <div id="modal-item-descricao" class="text-gray-800 font-semibold">Descrição do Produto</div>
                             <div id="modal-item-codigo" class="text-gray-600 text-sm mt-1">Código: Código Produto Aqui</div>
                         </td>
-                        
                         <td class="p-2 text-sm text-gray-800">PC</td>
-                        <td id="modal-unit-price" class="p-2 text-sm text-gray-800"></td>
+                        <td id="modal-venda-price" class="p-2 text-sm text-gray-800"></td>
+                        <td id="modal-revenda-price" class="p-2 text-sm text-gray-800"></td>
+                        <td id="modal-atacado-price" class="p-2 text-sm text-gray-800"></td>
                         <td class="p-2 flex items-center gap-2">
                             <button id="decrease-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">-</button>
                             <input 
@@ -201,6 +204,7 @@ button:hover {
                         <td id="modal-total-price" class="p-2 text-sm text-gray-800"></td>
                     </tr>
                 </tbody>
+                
             </table>
         </div>
 
@@ -270,7 +274,16 @@ button:hover {
     
         currentProduct = produto;
     
-        const valorFormatado = parseFloat(produto.valor_unitario).toLocaleString('pt-BR', {
+        // Calculando os preços para os três campos
+        const valorVenda = parseFloat(produto.valor_unitario * 1.00 * 100).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        const valorRevenda = parseFloat(produto.valor_unitario * 0.90 * 100).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        const valorAtacado = parseFloat(produto.valor_unitario * 0.80 * 100).toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         });
@@ -278,7 +291,9 @@ button:hover {
         // Atualizando a descrição e o código
         document.getElementById("modal-item-descricao").textContent = produto.descricao;
         document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
-        document.getElementById("modal-unit-price").textContent = valorFormatado;
+        document.getElementById("modal-venda-price").textContent = valorVenda;
+        document.getElementById("modal-revenda-price").textContent = valorRevenda;
+        document.getElementById("modal-atacado-price").textContent = valorAtacado;
     
         // Atualizando a Unidade dinamicamente
         const unidadeText = produto.quantidade > 100 ? "CT" : "PC";
@@ -326,6 +341,7 @@ button:hover {
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
+    
     
     
     addToOrderButton.addEventListener("click", () => {
