@@ -156,55 +156,68 @@ button:hover {
     
 
   <!-- Modal -->
-  <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 w-full max-w-4xl shadow-lg relative">
+<div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-6xl shadow-lg relative">
         <!-- Botão de Fechar -->
-        <button id="close-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button id="close-modal" class="absolute top-4 right-4 bg-gray-100 border border-gray-300 rounded-full p-2 hover:bg-gray-300 transition duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
 
         <!-- Conteúdo do Modal -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Detalhes do Produto</h2>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center bg-slate-500 py-4 rounded-t-lg">
+            Detalhes do Produto
+        </h2>
         <div id="modal-content" class="overflow-auto">
             <table class="table-auto w-full text-left border-collapse">
                 <thead>
                     <tr>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Item</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Unidade</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Venda</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Revenda</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Atacado</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Quantidade</th>
-                        <th class="border-b p-2 font-bold text-gray-700 text-sm">Total</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Item</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Unidade</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Venda</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Revenda</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Atacado</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Quantidade</th>
+                        <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td id="modal-item" class="p-2 text-sm text-gray-800 font-medium">
-                            <div id="modal-item-descricao" class="text-gray-800 font-semibold">Descrição do Produto</div>
-                            <div id="modal-item-codigo" class="text-gray-600 text-sm mt-1">Código: Código Produto Aqui</div>
+                        <td id="modal-item" class="p-4 text-lg font-medium text-center">
+                            <div id="modal-item-descricao" class="text-lg font-semibold">Descrição do Produto</div>
+                            <div id="modal-item-codigo" class="text-gray-500 text-base mt-1">Código: Código Produto Aqui</div>
                         </td>
-                        <td class="p-2 text-sm text-gray-800">PC</td>
-                        <td id="modal-venda-price" class="p-2 text-sm text-gray-800"></td>
-                        <td id="modal-revenda-price" class="p-2 text-sm text-gray-800"></td>
-                        <td id="modal-atacado-price" class="p-2 text-sm text-gray-800"></td>
-                        <td class="p-2 flex items-center gap-2">
-                            <button id="decrease-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">-</button>
+                        <td class="p-4 text-lg text-gray-800 text-center" id="modal-unit">CT</td>
+                        <td class="p-4 text-center">
+                            <button id="venda-button" class="pricing-button p-2 bg-blue-300 font-semibold rounded-md hover:bg-blue-600">
+                                R$ <span id="modal-venda-price"></span>
+                            </button>
+                        </td>
+                        <td class="p-4 text-center">
+                            <button id="revenda-button" class="pricing-button p-2 bg-green-300 font-semibold rounded-md hover:bg-green-600">
+                                R$ <span id="modal-revenda-price"></span>
+                            </button>
+                        </td>
+                        <td class="p-4 text-center">
+                            <button id="atacado-button" class="pricing-button p-2 bg-yellow-300 font-semibold rounded-md hover:bg-yellow-600">
+                                R$ <span id="modal-atacado-price"></span>
+                            </button>
+                        </td>
+                        <td class="p-4 flex justify-center items-center gap-2">
+                            <button id="decrease-quantity" class="bg-gray-200 px-3 py-2 rounded hover:bg-gray-300 text-lg">-</button>
                             <input 
                                 type="number" 
                                 id="quantity-input" 
-                                class="w-16 h-10 border border-gray-300 rounded px-2 text-center" 
+                                class="w-20 h-12 border border-gray-300 rounded px-2 text-center text-lg" 
                                 value="1" 
                                 min="1"
                             >
-                            <button id="increase-quantity" class="bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">+</button>
+                            <button id="increase-quantity" class="bg-gray-200 px-3 py-2 rounded hover:bg-gray-300 text-lg">+</button>
                         </td>
-                        <td id="modal-total-price" class="p-2 text-sm text-gray-800"></td>
+                        <td id="modal-total-price" class="p-4 text-gray-800 text-center"></td>
                     </tr>
                 </tbody>
-                
             </table>
         </div>
 
@@ -216,8 +229,6 @@ button:hover {
         </div>
     </div>
 </div>
-
-
 
 
 
@@ -275,36 +286,23 @@ button:hover {
         currentProduct = produto;
     
         // Calculando os preços para os três campos
-        const valorVenda = parseFloat(produto.valor_unitario * 1.00 * 100).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-        const valorRevenda = parseFloat(produto.valor_unitario * 0.90 * 100).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-        const valorAtacado = parseFloat(produto.valor_unitario * 0.80 * 100).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
+        const valorVenda = (produto.valor_unitario * 1.00 * 100).toFixed(2);
+        const valorRevenda = (produto.valor_unitario * 0.90 * 100).toFixed(2);
+        const valorAtacado = (produto.valor_unitario * 0.80 * 100).toFixed(2);
     
-        // Atualizando a descrição e o código
-        document.getElementById("modal-item-descricao").textContent = produto.descricao;
-        document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
+        // Atualizando os valores nos botões
         document.getElementById("modal-venda-price").textContent = valorVenda;
         document.getElementById("modal-revenda-price").textContent = valorRevenda;
         document.getElementById("modal-atacado-price").textContent = valorAtacado;
     
-        // Atualizando a Unidade dinamicamente
-        const unidadeText = produto.quantidade > 100 ? "CT" : "PC";
-        document.querySelector("#modal-item + td").textContent = unidadeText;
+        // Atualizando a descrição, código e unidade
+        document.getElementById("modal-item-descricao").textContent = produto.descricao;
+        document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
+        document.getElementById("modal-unit").textContent = produto.quantidade > 100 ? "CT" : "PC";
     
-        // Configurando quantidade inicial
+        // Configurando quantidade inicial e total
         document.getElementById("quantity-input").value = produto.quantidade;
         updateTotal(produto.quantidade, produto.valor_unitario);
-    
-        const decreaseQuantity = document.getElementById("decrease-quantity");
-        const increaseQuantity = document.getElementById("increase-quantity");
     
         function updateTotal(quantidade, valorUnitario) {
             const total = (quantidade * parseFloat(valorUnitario)).toLocaleString('pt-BR', {
@@ -312,35 +310,28 @@ button:hover {
                 currency: 'BRL'
             });
             document.getElementById("modal-total-price").textContent = total;
-    
-            // Atualizando a Unidade dinamicamente com base na quantidade
-            const novaUnidade = quantidade > 100 ? "CT" : "PC";
-            document.querySelector("#modal-item + td").textContent = novaUnidade;
         }
     
-        quantityInput.addEventListener("input", () => {
-            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
-            if (quantidade < 1) quantidade = 1;
-            updateTotal(quantidade, produto.valor_unitario);
-        });
+        // Adicionando eventos aos botões
+        document.getElementById("venda-button").addEventListener("click", () => highlightButton("venda"));
+        document.getElementById("revenda-button").addEventListener("click", () => highlightButton("revenda"));
+        document.getElementById("atacado-button").addEventListener("click", () => highlightButton("atacado"));
     
-        decreaseQuantity.addEventListener("click", () => {
-            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
-            if (quantidade > 1) quantidade -= 1;
-            quantityInput.value = quantidade;
-            updateTotal(quantidade, produto.valor_unitario);
-        });
-    
-        increaseQuantity.addEventListener("click", () => {
-            let quantidade = parseInt(quantityInput.value, 10) || produto.quantidade;
-            quantidade += 1;
-            quantityInput.value = quantidade;
-            updateTotal(quantidade, produto.valor_unitario);
-        });
+        function highlightButton(selected) {
+            ["venda", "revenda", "atacado"].forEach(type => {
+                const button = document.getElementById(`${type}-button`);
+                if (type === selected) {
+                    button.classList.add("ring-4", "ring-offset-2");
+                } else {
+                    button.classList.remove("ring-4", "ring-offset-2");
+                }
+            });
+        }
     
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
+    
     
     
     
