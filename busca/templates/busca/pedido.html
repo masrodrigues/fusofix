@@ -69,6 +69,23 @@
                     placeholder="Digite o nome do cliente"
                 >
             </div>
+            <div class="mb-4">
+                <label for="validity-date" class="block text-sm font-medium text-gray-700">Data de Validade</label>
+                <input 
+                    type="date" 
+                    id="validity-date" 
+                    class="w-full border border-gray-300 rounded px-4 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                >
+            </div>
+            <div class="mb-4">
+                <label for="payment-conditions" class="block text-sm font-medium text-gray-700">Condições de Pagamento</label>
+                <input 
+                    type="text" 
+                    id="payment-conditions" 
+                    class="w-full border border-gray-300 rounded px-4 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-yellow-500" 
+                    placeholder="Digite as condições de pagamento"
+                >
+            </div>
             <div class="flex justify-end space-x-4">
                 <button id="close-save-modal" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
                     Cancelar
@@ -79,7 +96,7 @@
             </div>
         </div>
     </div>
-
+    
     <script>
         const orderItemsContainer = document.getElementById("order-items");
         const orderTotalContainer = document.getElementById("order-total");
@@ -158,17 +175,22 @@
         // Confirmar e salvar pedido ou enviar email
         confirmSaveButton.addEventListener("click", () => {
             const clientName = clientNameInput.value.trim();
-            if (!clientName) {
-                alert("Por favor, insira o nome do cliente.");
+            const validityDate = document.getElementById("validity-date").value;
+            const paymentConditions = document.getElementById("payment-conditions").value;
+        
+            if (!clientName || !validityDate || !paymentConditions) {
+                alert("Por favor, preencha todos os campos.");
                 return;
             }
-    
-            generatePDF(clientName, isEmailFlow);
+        
+            generatePDF(clientName, validityDate, paymentConditions, isEmailFlow);
             saveModal.classList.add("hidden");
             clientNameInput.value = "";
+            document.getElementById("validity-date").value = "";
+            document.getElementById("payment-conditions").value = "";
         });
-    
-        function generatePDF(clientName, isEmail = false) {
+        
+        function generatePDF(clientName, validityDate, paymentConditions, isEmail = false) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
         
@@ -182,55 +204,47 @@
                 year: "numeric",
             });
         
-            const validityDate = new Date(currentDate);
-            validityDate.setDate(currentDate.getDate() + 15);
-            const formattedValidityDate = validityDate.toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-            });
-        
             logo.onload = function () {
                 const logoWidth = 40;
                 const logoHeight = (logo.height / logo.width) * logoWidth;
-            
+        
                 // Cabeçalho com logo e título
                 doc.addImage(logo, "PNG", 10, 10, logoWidth, logoHeight);
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(20);
                 doc.text("Resumo do Orçamento", 150, 20, null, null, "right");
-            
+        
                 // Nome do Cliente em destaque
                 doc.setFontSize(16);
                 doc.text(`Cliente: ${clientName}`, 10, logoHeight + 20);
-            
+        
                 // Informações do pedido alinhadas à esquerda
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(10);
                 const infoStartY = logoHeight + 30; // Posição inicial das informações
                 const lineHeight = 7; // Altura entre as linhas para reduzir espaçamento
                 doc.text(`Data do Pedido: ${formattedDate}`, 10, infoStartY);
-                doc.text(`Validade do Pedido: ${formattedValidityDate}`, 10, infoStartY + lineHeight);
-                doc.text(`Condições de Pagamento: 28DD`, 10, infoStartY + lineHeight * 2);
-            
+                doc.text(`Validade do Pedido: ${new Date(validityDate).toLocaleDateString("pt-BR")}`, 10, infoStartY + lineHeight);
+                doc.text(`Condições de Pagamento: ${paymentConditions}`, 10, infoStartY + lineHeight * 2);
+        
                 // Informações de contato alinhadas à direita
-                const contactStartX = 120;
+                const contactStartX = 130;
                 doc.setFont("helvetica", "italic");
                 doc.text("Telefone: (51) 3483.2356", contactStartX, infoStartY);
                 doc.text("Email: fusofix@terra.com.br", contactStartX, infoStartY + lineHeight);
                 doc.text("Endereço: Av. Pres. Getúlio Vargas, 3389", contactStartX, infoStartY + lineHeight * 2);
-            
+        
                 // Linha divisória
                 doc.setDrawColor(242, 47, 81);
                 doc.setLineWidth(0.5);
                 doc.line(10, infoStartY + lineHeight * 3 + 5, 200, infoStartY + lineHeight * 3 + 5);
-            
+        
                 // Desconto à vista
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(12);
-                doc.setTextColor(0, 102, 0); // Verde
+                doc.setTextColor(65, 105, 255); // Verde
                 doc.text("Desconto de 5% para pagamento à vista", 10, infoStartY + lineHeight * 4 + 10);
-            
+        
                 // Tabela
                 const headers = [["Nome", "Quantidade", "Valor Total"]];
                 const data = order.map(item => [
@@ -238,20 +252,15 @@
                     item.quantidade,
                     `R$ ${item.total.toFixed(2)}`
                 ]);
-            
+        
                 let total = order.reduce((sum, item) => sum + item.total, 0);
                 const discount = total * 0.05; // 5% de desconto
                 const discountedTotal = total - discount;
-            
-                // Adicionar totais e desconto à tabela
+        
                 data.push(["", "Total", `R$ ${total.toFixed(2)}`]);
                 data.push(["", "Desconto à Vista", `- R$ ${discount.toFixed(2)}`]);
                 data.push(["", "Total com Desconto", `R$ ${discountedTotal.toFixed(2)}`]);
-            // Rodapé com mensagem de agradecimento
-doc.setFont("helvetica", "italic");
-doc.setFontSize(10);
-doc.setTextColor(100);
-doc.text("Obrigado pela preferência - Fusofix 2025", doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
+        
                 doc.autoTable({
                     startY: infoStartY + lineHeight * 5 + 10,
                     head: headers,
@@ -272,33 +281,38 @@ doc.text("Obrigado pela preferência - Fusofix 2025", doc.internal.pageSize.widt
                         2: { halign: "right", cellWidth: 50 }
                     }
                 });
-            
+        
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text("Obrigado pela preferência - Fusofix 2025", doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
+        
                 if (isEmail) {
                     const pdfBlob = doc.output("blob");
                     const pdfUrl = URL.createObjectURL(pdfBlob);
-            
+        
                     const emailSubject = encodeURIComponent("Resumo do Pedido");
                     const emailBody = encodeURIComponent(`Segue em anexo o resumo do pedido do cliente: ${clientName}.`);
                     const emailLink = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-            
+        
                     const link = document.createElement("a");
                     link.href = pdfUrl;
                     link.download = `Pedido_${clientName.replace(/\s/g, "_")}.pdf`;
                     link.click();
-            
+        
                     setTimeout(() => {
                         window.open(emailLink, "_self");
-                    }, 500); // Pequeno atraso para garantir que o PDF seja baixado antes do e-mail abrir
+                    }, 500);
                 } else {
                     doc.save(`Pedido_${clientName.replace(/\s/g, "_")}.pdf`);
                 }
             };
-            
         
             logo.onerror = function () {
                 alert("Erro ao carregar o logo para o PDF.");
             };
         }
+        
         
     
         // Renderizar o pedido ao carregar a página
