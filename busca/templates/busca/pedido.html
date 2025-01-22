@@ -4,7 +4,7 @@
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resumo do Pedido</title>
+    <title>Resumo do Orçamento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
 </head>
@@ -15,7 +15,7 @@
             <img src="{% static 'images/logo-belenus.png' %}" alt="Logo Belenus" class="w-auto h-14">
         </div>
         <div class="flex-grow text-center">
-            <h1 class="text-3xl font-bold text-gray-800">Resumo do Pedido</h1>
+            <h1 class="text-3xl font-bold text-gray-800">Resumo do Orçamento</h1>
         </div>
         <div class="pr-8">
             <a href="{% url 'home' %}" class="text-blue-500 hover:underline text-lg font-semibold">
@@ -28,7 +28,7 @@
     <!-- Conteúdo do Pedido -->
     <div class="container mx-auto mt-8 bg-white rounded shadow-lg p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Seu Pedido</h2>
+            <h2 class="text-xl font-bold">Seu Orçamento</h2>
             <button 
                 id="clear-cart" 
                 class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
@@ -59,7 +59,7 @@
     <!-- Modal para salvar pedido -->
     <div id="save-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
         <div class="bg-white rounded-lg p-6 w-1/3">
-            <h3 class="text-lg font-bold mb-4">Salvar Pedido</h3>
+            <h3 class="text-lg font-bold mb-4">Salvar Orçamento</h3>
             <div class="mb-4">
                 <label for="client-name" class="block text-sm font-medium text-gray-700">Nome do Cliente</label>
                 <input 
@@ -171,39 +171,66 @@
         function generatePDF(clientName, isEmail = false) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-    
+        
             const logo = new Image();
             logo.src = "{% static 'images/logo-fusofix.png' %}";
-    
+        
             const currentDate = new Date();
             const formattedDate = currentDate.toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
             });
-    
+        
+            const validityDate = new Date(currentDate);
+            validityDate.setDate(currentDate.getDate() + 15);
+            const formattedValidityDate = validityDate.toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            });
+        
             logo.onload = function () {
                 const logoWidth = 40;
                 const logoHeight = (logo.height / logo.width) * logoWidth;
-    
+            
                 // Cabeçalho com logo e título
                 doc.addImage(logo, "PNG", 10, 10, logoWidth, logoHeight);
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(20);
-                doc.text("Resumo do Pedido", 150, 20, null, null, "right");
-    
-                // Informações do cliente e data
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(14);
+                doc.text("Resumo do Orçamento", 150, 20, null, null, "right");
+            
+                // Nome do Cliente em destaque
+                doc.setFontSize(16);
                 doc.text(`Cliente: ${clientName}`, 10, logoHeight + 20);
-                doc.setFontSize(12);
-                doc.text(`Data do Pedido: ${formattedDate}`, 10, logoHeight + 30);
-    
+            
+                // Informações do pedido alinhadas à esquerda
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                const infoStartY = logoHeight + 30; // Posição inicial das informações
+                const lineHeight = 7; // Altura entre as linhas para reduzir espaçamento
+                doc.text(`Data do Pedido: ${formattedDate}`, 10, infoStartY);
+                doc.text(`Validade do Pedido: ${formattedValidityDate}`, 10, infoStartY + lineHeight);
+                doc.text(`Condições de Pagamento: 28DD`, 10, infoStartY + lineHeight * 2);
+            
+                // Informações de contato alinhadas à direita
+                const contactStartX = 120;
+                doc.setFont("helvetica", "italic");
+                doc.text("Telefone: (51) 3483.2356", contactStartX, infoStartY);
+                doc.text("Email: fusofix@terra.com.br", contactStartX, infoStartY + lineHeight);
+                doc.text("Endereço: Av. Pres. Getúlio Vargas, 3389", contactStartX, infoStartY + lineHeight * 2);
+            
                 // Linha divisória
                 doc.setDrawColor(242, 47, 81);
                 doc.setLineWidth(0.5);
-                doc.line(10, logoHeight + 35, 200, logoHeight + 35);
-    
+                doc.line(10, infoStartY + lineHeight * 3 + 5, 200, infoStartY + lineHeight * 3 + 5);
+            
+                // Desconto à vista
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.setTextColor(0, 102, 0); // Verde
+                doc.text("Desconto de 5% para pagamento à vista", 10, infoStartY + lineHeight * 4 + 10);
+            
                 // Tabela
                 const headers = [["Nome", "Quantidade", "Valor Total"]];
                 const data = order.map(item => [
@@ -211,19 +238,32 @@
                     item.quantidade,
                     `R$ ${item.total.toFixed(2)}`
                 ]);
-    
+            
                 let total = order.reduce((sum, item) => sum + item.total, 0);
+                const discount = total * 0.05; // 5% de desconto
+                const discountedTotal = total - discount;
+            
+                // Adicionar totais e desconto à tabela
                 data.push(["", "Total", `R$ ${total.toFixed(2)}`]);
-    
+                data.push(["", "Desconto à Vista", `- R$ ${discount.toFixed(2)}`]);
+                data.push(["", "Total com Desconto", `R$ ${discountedTotal.toFixed(2)}`]);
+            // Rodapé com mensagem de agradecimento
+doc.setFont("helvetica", "italic");
+doc.setFontSize(10);
+doc.setTextColor(100);
+doc.text("Obrigado pela preferência - Fusofix 2025", doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
                 doc.autoTable({
-                    startY: logoHeight + 40,
+                    startY: infoStartY + lineHeight * 5 + 10,
                     head: headers,
                     body: data,
                     theme: "grid",
                     headStyles: { fillColor: [242, 47, 81], textColor: [255, 255, 255], fontSize: 12 },
                     styles: { fontSize: 10, cellPadding: 3 },
                     bodyStyles: (rowIndex, colIndex) => {
-                        if (rowIndex === data.length - 1) return { fontStyle: "bold" };
+                        // Deixar totais em negrito
+                        if (rowIndex >= data.length - 3) {
+                            return { fontStyle: "bold", textColor: [0, 0, 0] };
+                        }
                         return {};
                     },
                     columnStyles: {
@@ -232,20 +272,20 @@
                         2: { halign: "right", cellWidth: 50 }
                     }
                 });
-    
+            
                 if (isEmail) {
                     const pdfBlob = doc.output("blob");
                     const pdfUrl = URL.createObjectURL(pdfBlob);
-    
+            
                     const emailSubject = encodeURIComponent("Resumo do Pedido");
                     const emailBody = encodeURIComponent(`Segue em anexo o resumo do pedido do cliente: ${clientName}.`);
                     const emailLink = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-    
+            
                     const link = document.createElement("a");
                     link.href = pdfUrl;
                     link.download = `Pedido_${clientName.replace(/\s/g, "_")}.pdf`;
                     link.click();
-    
+            
                     setTimeout(() => {
                         window.open(emailLink, "_self");
                     }, 500); // Pequeno atraso para garantir que o PDF seja baixado antes do e-mail abrir
@@ -253,11 +293,13 @@
                     doc.save(`Pedido_${clientName.replace(/\s/g, "_")}.pdf`);
                 }
             };
-    
+            
+        
             logo.onerror = function () {
                 alert("Erro ao carregar o logo para o PDF.");
             };
         }
+        
     
         // Renderizar o pedido ao carregar a página
         document.addEventListener("DOMContentLoaded", renderOrder);
