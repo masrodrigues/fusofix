@@ -166,13 +166,13 @@ button:hover {
         </button>
 
         <!-- Conteúdo do Modal -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center bg-slate-500 py-4 rounded-t-lg">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center bg-slate-400 py-4 rounded-t-lg">
             Detalhes do Produto
         </h2>
         <div id="modal-content" class="overflow-auto">
-            <table class="table-auto w-full text-left border-collapse">
+            <table class="table-auto w-full text-left border-collapse ">
                 <thead>
-                    <tr>
+                    <tr class="bg-gray-200">
                         <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Item</th>
                         <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Unidade</th>
                         <th class="border-b p-2 font-bold text-gray-700 text-sm text-center">Venda</th>
@@ -190,17 +190,17 @@ button:hover {
                         </td>
                         <td class="p-4 text-lg text-gray-800 text-center" id="modal-unit">CT</td>
                         <td class="p-4 text-center">
-                            <button id="venda-button" class="pricing-button p-2 bg-blue-300 font-semibold rounded-md hover:bg-blue-600">
+                            <button id="venda-button" class="pricing-button p-2 bg-blue-300 font-semibold rounded-md hover:bg-blue-500">
                                 R$ <span id="modal-venda-price"></span>
                             </button>
                         </td>
                         <td class="p-4 text-center">
-                            <button id="revenda-button" class="pricing-button p-2 bg-green-300 font-semibold rounded-md hover:bg-green-600">
+                            <button id="revenda-button" class="pricing-button p-2 bg-red-300 font-semibold rounded-md hover:bg-red-500">
                                 R$ <span id="modal-revenda-price"></span>
                             </button>
                         </td>
                         <td class="p-4 text-center">
-                            <button id="atacado-button" class="pricing-button p-2 bg-yellow-300 font-semibold rounded-md hover:bg-yellow-600">
+                            <button id="atacado-button" class="pricing-button p-2 bg-yellow-300 font-semibold rounded-md hover:bg-yellow-500">
                                 R$ <span id="modal-atacado-price"></span>
                             </button>
                         </td>
@@ -278,17 +278,17 @@ button:hover {
     searchInput.addEventListener("input", debounce(handleSearch, 600));
 
     function openProductModal(produto) {
-        if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_unitario || !produto.quantidade) {
+        if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_unitario) {
             console.error("Dados do produto estão incompletos:", produto);
             return;
         }
     
         currentProduct = produto;
     
-        // Calculando os preços para os três campos
-        const valorVenda = (produto.valor_unitario * 1.00 * 100).toFixed(2);
-        const valorRevenda = (produto.valor_unitario * 0.90 * 100).toFixed(2);
-        const valorAtacado = (produto.valor_unitario * 0.80 * 100).toFixed(2);
+        // Calculando os preços para os três campos com 4 casas decimais
+        const valorVenda = (produto.valor_unitario * 1.00).toFixed(4);
+        const valorRevenda = (produto.valor_unitario * 0.90).toFixed(4);
+        const valorAtacado = (produto.valor_unitario * 0.80).toFixed(4);
     
         // Atualizando os valores nos botões
         document.getElementById("modal-venda-price").textContent = valorVenda;
@@ -300,25 +300,48 @@ button:hover {
         document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
         document.getElementById("modal-unit").textContent = produto.quantidade > 100 ? "CT" : "PC";
     
-        // Configurando quantidade inicial e total
-        document.getElementById("quantity-input").value = produto.quantidade;
-        updateTotal(produto.quantidade, produto.valor_unitario);
+        // Configura o campo de quantidade vazio e total inicial
+        document.getElementById("quantity-input").value = "";
+        let selectedPrice = produto.valor_unitario;
+    
+        // Atualiza o total ao alterar a quantidade
+        document.getElementById("quantity-input").addEventListener("input", (event) => {
+            const quantidade = parseInt(event.target.value, 10) || 0;
+            updateTotal(quantidade, selectedPrice);
+        });
     
         function updateTotal(quantidade, valorUnitario) {
             const total = (quantidade * parseFloat(valorUnitario)).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4,
             });
             document.getElementById("modal-total-price").textContent = total;
         }
     
-        // Adicionando eventos aos botões
-        document.getElementById("venda-button").addEventListener("click", () => highlightButton("venda"));
-        document.getElementById("revenda-button").addEventListener("click", () => highlightButton("revenda"));
-        document.getElementById("atacado-button").addEventListener("click", () => highlightButton("atacado"));
+        // Adicionando eventos aos botões de preço
+        document.getElementById("venda-button").addEventListener("click", () => {
+            selectedPrice = parseFloat(valorVenda);
+            highlightButton("venda");
+            const quantidade = parseInt(document.getElementById("quantity-input").value, 10) || 0;
+            updateTotal(quantidade, selectedPrice);
+        });
+    
+        document.getElementById("revenda-button").addEventListener("click", () => {
+            selectedPrice = parseFloat(valorRevenda);
+            highlightButton("revenda");
+            const quantidade = parseInt(document.getElementById("quantity-input").value, 10) || 0;
+            updateTotal(quantidade, selectedPrice);
+        });
+    
+        document.getElementById("atacado-button").addEventListener("click", () => {
+            selectedPrice = parseFloat(valorAtacado);
+            highlightButton("atacado");
+            const quantidade = parseInt(document.getElementById("quantity-input").value, 10) || 0;
+            updateTotal(quantidade, selectedPrice);
+        });
     
         function highlightButton(selected) {
-            ["venda", "revenda", "atacado"].forEach(type => {
+            ["venda", "revenda", "atacado"].forEach((type) => {
                 const button = document.getElementById(`${type}-button`);
                 if (type === selected) {
                     button.classList.add("ring-4", "ring-offset-2");
@@ -332,20 +355,22 @@ button:hover {
         searchResults.classList.add("hidden");
     }
     
-    
-    
+        
     
     addToOrderButton.addEventListener("click", () => {
         const quantity = parseInt(quantityInput.value, 10);
-        if (currentProduct && quantity >= currentProduct.quantidade) {
+    
+        if (currentProduct && quantity > 0) {
             addToOrder(currentProduct, quantity);
             closeModalFunction();
+        } else {
+            alert("Por favor, insira uma quantidade válida.");
         }
     });
-
+    
     function addToOrder(produto, quantity) {
-        const existingProduct = order.find(p => p.codigo === produto.codigo_do_produto);
-
+        const existingProduct = order.find((p) => p.codigo === produto.codigo_do_produto);
+    
         if (existingProduct) {
             existingProduct.quantidade += quantity;
             existingProduct.total += produto.valor_unitario * quantity;
@@ -355,13 +380,14 @@ button:hover {
                 codigo: produto.codigo_do_produto,
                 quantidade: quantity,
                 valor_unitario: produto.valor_unitario,
-                total: produto.valor_unitario * quantity
+                total: produto.valor_unitario * quantity,
             });
         }
-
+    
         localStorage.setItem("order", JSON.stringify(order));
         updateOrderCount();
     }
+    
 
     function updateOrderCount() {
         const totalProducts = order.length;
