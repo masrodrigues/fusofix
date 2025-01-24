@@ -233,6 +233,7 @@ button:hover {
 
 
 <script>
+    console.log("JavaScript carregado com sucesso!");
     const searchInput = document.getElementById("search-input");
     const searchResults = document.getElementById("search-results");
     const productModal = document.getElementById("product-modal");
@@ -256,13 +257,15 @@ button:hover {
 
     // Busca com debounce e animação
     async function handleSearch() {
+        console.log("Evento de busca acionado!");
         const query = searchInput.value.trim();
         searchResults.innerHTML = "";
         if (query.length > 2) {
             const response = await fetch(`/api/search?q=${query}`);
             const produtos = await response.json();
+            console.log("Produtos retornados:", produtos);
             searchResults.classList.remove("hidden");
-
+    
             produtos.forEach(produto => {
                 const li = document.createElement("li");
                 li.classList.add("px-4", "py-2", "hover:bg-gray-200", "cursor-pointer", "fade-in");
@@ -277,39 +280,33 @@ button:hover {
 
     searchInput.addEventListener("input", debounce(handleSearch, 600));
 
+    // Abrir modal com os dados do produto
     function openProductModal(produto) {
-        if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_unitario) {
+        console.log("Modal aberto com produto:", produto);
+        if (!produto.descricao || !produto.codigo_do_produto || !produto.valor_venda || !produto.valor_revenda || !produto.valor_atacado) {
             console.error("Dados do produto estão incompletos:", produto);
             return;
         }
-    
+       
+        // Atribuindo o produto atual
         currentProduct = produto;
     
-        // Calculando os preços para os três campos com 4 casas decimais
-        const valorVenda = (produto.valor_unitario * 1.00).toFixed(4);
-        const valorRevenda = (produto.valor_unitario * 0.90).toFixed(4);
-        const valorAtacado = (produto.valor_unitario * 0.80).toFixed(4);
-    
-        // Atualizando os valores nos botões
-        document.getElementById("modal-venda-price").textContent = valorVenda;
-        document.getElementById("modal-revenda-price").textContent = valorRevenda;
-        document.getElementById("modal-atacado-price").textContent = valorAtacado;
+        // Atualizando os valores diretamente do banco
+        document.getElementById("modal-venda-price").textContent = parseFloat(produto.valor_venda).toFixed(4);
+        document.getElementById("modal-revenda-price").textContent = parseFloat(produto.valor_revenda).toFixed(4);
+        document.getElementById("modal-atacado-price").textContent = parseFloat(produto.valor_atacado).toFixed(4);
     
         // Atualizando a descrição, código e unidade
         document.getElementById("modal-item-descricao").textContent = produto.descricao;
         document.getElementById("modal-item-codigo").textContent = `Código: ${produto.codigo_do_produto}`;
-        document.getElementById("modal-unit").textContent = produto.quantidade > 100 ? "CT" : "PC";
+        document.getElementById("modal-unit").textContent = produto.quantidade > 100 ? "CT" : "UN";
     
-        // Configura o campo de quantidade vazio e total inicial
-        document.getElementById("quantity-input").value = "";
-        let selectedPrice = produto.valor_unitario;
-    
-        // Atualiza o total ao alterar a quantidade
-        document.getElementById("quantity-input").addEventListener("input", (event) => {
-            const quantidade = parseInt(event.target.value, 10) || 0;
-            updateTotal(quantidade, selectedPrice);
-        });
-    
+        // Configurando o campo de quantidade e total inicial
+        const quantityInput = document.getElementById("quantity-input");
+        quantityInput.value = "";
+        let selectedPrice = parseFloat(produto.valor_venda);
+
+        // Função para atualizar o total
         function updateTotal(quantidade, valorUnitario) {
             const total = (quantidade * parseFloat(valorUnitario)).toLocaleString('pt-BR', {
                 minimumFractionDigits: 4,
@@ -317,29 +314,36 @@ button:hover {
             });
             document.getElementById("modal-total-price").textContent = total;
         }
-    
+
+        // Atualizando o total ao alterar a quantidade
+        quantityInput.addEventListener("input", (event) => {
+            const quantidade = parseInt(event.target.value, 10) || 0;
+            updateTotal(quantidade, selectedPrice);
+        });
+
         // Adicionando eventos aos botões de preço
-        document.getElementById("venda-button").addEventListener("click", () => {
-            selectedPrice = parseFloat(valorVenda);
+        document.getElementById("venda-button").onclick = () => {
+            selectedPrice = parseFloat(produto.valor_venda);
             highlightButton("venda");
-            const quantidade = parseInt(document.getElementById("quantity-input").value, 10) || 0;
+            const quantidade = parseInt(quantityInput.value, 10) || 0;
             updateTotal(quantidade, selectedPrice);
-        });
-    
-        document.getElementById("revenda-button").addEventListener("click", () => {
-            selectedPrice = parseFloat(valorRevenda);
+        };
+
+        document.getElementById("revenda-button").onclick = () => {
+            selectedPrice = parseFloat(produto.valor_revenda);
             highlightButton("revenda");
-            const quantidade = parseInt(document.getElementById("quantity-input").value, 10) || 0;
+            const quantidade = parseInt(quantityInput.value, 10) || 0;
             updateTotal(quantidade, selectedPrice);
-        });
-    
-        document.getElementById("atacado-button").addEventListener("click", () => {
-            selectedPrice = parseFloat(valorAtacado);
+        };
+
+        document.getElementById("atacado-button").onclick = () => {
+            selectedPrice = parseFloat(produto.valor_atacado);
             highlightButton("atacado");
-            const quantidade = parseInt(document.getElementById("quantity-input").value, 10) || 0;
+            const quantidade = parseInt(quantityInput.value, 10) || 0;
             updateTotal(quantidade, selectedPrice);
-        });
-    
+        };
+
+        // Função para destacar o botão selecionado
         function highlightButton(selected) {
             ["venda", "revenda", "atacado"].forEach((type) => {
                 const button = document.getElementById(`${type}-button`);
@@ -350,16 +354,16 @@ button:hover {
                 }
             });
         }
-    
+
+        // Mostrando o modal
         productModal.classList.remove("hidden");
         searchResults.classList.add("hidden");
     }
-    
-        
-    
+
+    // Adicionar produto ao pedido
     addToOrderButton.addEventListener("click", () => {
         const quantity = parseInt(quantityInput.value, 10);
-    
+
         if (currentProduct && quantity > 0) {
             addToOrder(currentProduct, quantity);
             closeModalFunction();
@@ -367,27 +371,26 @@ button:hover {
             alert("Por favor, insira uma quantidade válida.");
         }
     });
-    
+
     function addToOrder(produto, quantity) {
         const existingProduct = order.find((p) => p.codigo === produto.codigo_do_produto);
-    
+
         if (existingProduct) {
             existingProduct.quantidade += quantity;
-            existingProduct.total += produto.valor_unitario * quantity;
+            existingProduct.total += produto.valor_venda * quantity;
         } else {
             order.push({
                 descricao: produto.descricao,
                 codigo: produto.codigo_do_produto,
                 quantidade: quantity,
-                valor_unitario: produto.valor_unitario,
-                total: produto.valor_unitario * quantity,
+                valor_venda: produto.valor_venda,
+                total: produto.valor_venda * quantity,
             });
         }
-    
+
         localStorage.setItem("order", JSON.stringify(order));
         updateOrderCount();
     }
-    
 
     function updateOrderCount() {
         const totalProducts = order.length;

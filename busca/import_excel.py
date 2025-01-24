@@ -21,7 +21,6 @@ df = pd.read_excel(excel_file_path)
 
 # Iterar pelos dados e inserir no banco
 for _, row in df.iterrows():
-    # Verificar se o produto já existe no banco
     produto_existente = Produto.objects.filter(codigo_do_produto=row['codigo_do_produto']).first()
     
     if produto_existente:
@@ -30,6 +29,9 @@ for _, row in df.iterrows():
         produto_existente.quantidade = row['quantidade']
         produto_existente.valor = row['valor']
         produto_existente.valor_unitario = row['valor_unitario']
+        produto_existente.valor_venda = row['valor_venda']
+        produto_existente.valor_revenda = row['valor_revenda']
+        produto_existente.valor_atacado = row['valor_atacado']
         produto_existente.save()
         print(f"Produto atualizado: {row['codigo_do_produto']}")
     else:
@@ -39,7 +41,10 @@ for _, row in df.iterrows():
             descricao=row['descricao'],
             quantidade=row['quantidade'],
             valor=row['valor'],
-            valor_unitario=row['valor_unitario']
+            valor_unitario=row['valor_unitario'],
+            valor_venda=row['valor_venda'],
+            valor_revenda=row['valor_revenda'],
+            valor_atacado=row['valor_atacado']
         )
         produto.save()
         print(f"Produto inserido: {row['codigo_do_produto']}")

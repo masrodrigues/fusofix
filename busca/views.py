@@ -20,10 +20,14 @@ def busca_produtos_api(request):
     )
     # Retorna mais informações do produto
     data = list(resultados.values(
-        'descricao', 
-        'codigo_do_produto', 
-        'quantidade', 
-        'valor_unitario'
+        'descricao',
+        'codigo_do_produto',
+        'quantidade',
+        'valor',
+        'valor_unitario',
+        'valor_venda',
+        'valor_revenda',
+        'valor_atacado'
     ))
     return JsonResponse(data, safe=False)
 
